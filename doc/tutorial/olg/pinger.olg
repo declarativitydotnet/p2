@@ -23,5 +23,6 @@ link("127.0.0.1:11111", "127.0.0.1:22222").
 r1 ping(@J, I) :- periodic(@I, E, 1, 20), link(@I, J).
 
 watchmod(pong, "c").
+
 watch(ping).
 

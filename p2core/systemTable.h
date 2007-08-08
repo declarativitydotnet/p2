@@ -195,6 +195,7 @@ FUNCTIONDEF("f_coinFlip",    1, "coin")
 FUNCTIONDEF("f_rand",        0, "rand")
 FUNCTIONDEF("f_now",         0, "now")
 FUNCTIONDEF("f_sha1",        1, "sha1")
+FUNCTIONDEF("f_test",        1, "test")
 FUNCTIONDEF("f_match",       2, "match")
 FUNCTIONDEF("f_append",      1, "lappend") // Append with null
 FUNCTIONDEF("f_append",      2, "lappend") // Append
