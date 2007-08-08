@@ -206,6 +206,13 @@ string pelFunction(PlanContext* pc, Parse_Function *expr)
 	expr2Pel(pc, pel, expr->arg(0));
 	pel << "sha1 ";
   }
+  else if (expr->name() == "f_test") {
+    if (expr->args() != 1) {
+      error(pc, "Error in pel generation " + expr->toString());
+    }
+	expr2Pel(pc, pel, expr->arg(0));
+	pel << "test ";
+  }
   // Strings
   else if (expr->name() == "f_match") {
     if (expr->args() != 2) {

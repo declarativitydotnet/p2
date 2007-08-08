@@ -64,7 +64,7 @@ namespace compile {
            !funcIter->done(); ) {
         TuplePtr functor = funcIter->next();
         if ((*functor)[catalog->attribute(FUNCTOR, "POSITION")] == Val_UInt32::mk(1)) {
-          if (event) throw compile::local::Exception("LOCAL CONTEXT: More than one event in rule");
+          if (event) throw compile::local::Exception("LOCAL CONTEXT: More than one event in rule" + rule->toString() + " \n prev event" + event->toString() + " \n current event " + functor->toString() + "\n");
           event = functor;
         } 
         else if ((*functor)[catalog->attribute(FUNCTOR, "POSITION")] == Val_UInt32::mk(0)) {

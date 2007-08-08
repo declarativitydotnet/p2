@@ -26,6 +26,7 @@
 
 #include <openssl/sha.h>
 
+
 #include "plumber.h"
 #include "compileUtil.h"
 #include "val_int32.h"
@@ -36,12 +37,17 @@
 #include "val_double.h"
 #include "val_null.h"
 #include "val_tuple.h"
+#include "val_opaque.h"
 #include "val_time.h"
 #include "val_id.h"
 #include "val_vector.h"
 #include "val_matrix.h"
 #include "oper.h"
 #include "loop.h"
+#include "fdbuf.h"
+#include "xdrbuf.h"
+
+
 
 using namespace opr;
 
@@ -887,6 +893,16 @@ DEF_OP(BIT_OR) {
   ValuePtr v1 = pop();
   ValuePtr v2 = pop();
   stackPush((v2 | v1));
+}
+DEF_OP(APPEND) {
+  ValuePtr v1 = pop();
+  ValuePtr v2 = pop();
+  Fdbuf fin(0);
+  XDR *xdr;
+  xdrfdbuf_create(xdr, &fin, false, XDR_ENCODE);
+  v1->xdr_marshal(xdr);
+  v2->xdr_marshal(xdr);
+  stackPush(Val_Opaque::mk(FdbufPtr(&fin)));
 }
 DEF_OP(BIT_XOR) {
   ValuePtr v1 = pop();
