@@ -12,8 +12,7 @@
 
 #include <iostream>
 #include "cumulativeAck.h"
-#include "val_uint64.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "val_double.h"
 #include "val_str.h"
 #include "val_tuple.h"
@@ -72,12 +71,12 @@ CumulativeAck::CumulativeAck(TuplePtr args)
 TuplePtr CumulativeAck::simple_action(TuplePtr tp)
 {
   ValuePtr src = (*tp)[SRC+2];
-  SeqNum   seq = Val_UInt64::cast((*tp)[SEQ+2]);
-  SeqNum   srcCumulativeSeq = Val_UInt64::cast((*tp)[CUMSEQ+2]);
+  SeqNum   seq = Val_Int64::cast((*tp)[SEQ+2]);
+  SeqNum   srcCumulativeSeq = Val_Int64::cast((*tp)[CUMSEQ+2]);
   ConnectionPtr cp = lookup(src);
 
   if (srcCumulativeSeq == 0 && cp) {
-    if (cp->_tcb != NULL) timeCBRemove(cp->_tcb);
+    if (cp->_tcb != 0) EventLoop::loop()->cancel_timer(cp->_tcb);
     unmap(src);
     cp.reset();
   }
@@ -98,19 +97,19 @@ TuplePtr CumulativeAck::simple_action(TuplePtr tp)
   TuplePtr cack = Tuple::mk();
   for (unsigned i = 0; i < tp->size(); i++) {
     if (i == CUMSEQ+2) {
-      cack->append(Val_UInt64::mk(cp->_cum_seq));
+      cack->append(Val_Int64::mk(cp->_cum_seq));
     }
     else {
       cack->append((*tp)[i]);
     }
   }
 
-  if (cp->_tcb != NULL) {
-    timeCBRemove(cp->_tcb);
-    cp->_tcb = NULL;
+  if (cp->_tcb != 0) {
+    EventLoop::loop()->cancel_timer(cp->_tcb);
+    cp->_tcb = 0;
   }
-  cp->_tcb = delayCB(CONNECTION_TIMEOUT,
-                     boost::bind(&CumulativeAck::unmap, this, src), this);
+  cp->_tcb = EventLoop::loop()->enqueue_timer(CONNECTION_TIMEOUT,
+					      boost::bind(&CumulativeAck::unmap, this, src));
 
   return cack;
 }

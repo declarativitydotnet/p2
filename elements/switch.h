@@ -19,51 +19,46 @@
 
 #include "element.h"
 #include "elementRegistry.h"
-#include "iRunnable.h"
-#include "plumber.h"
 
 class Switch : public Element { 
 public:
   
   /** nTuple == 0 means infinite amount of tuples, with no switch off. */
-  Switch(string name, int nTuple = 0, bool reg=false);
+  Switch(string name, int nTuple = 0);
   Switch(TuplePtr);
 
   const char *class_name() const { return "Switch";}
   const char *processing() const { return "l/h"; }
   const char *flow_code() const	 { return "-/-"; }
+  
+  /*overriding element code*/
+  int initialize();
+
+  /* Turn the switch off and on */
+  void set_state(bool torun);
 
   DECLARE_PUBLIC_ELEMENT_INITS
 
 protected:
-  int initialize();
+  
+  /** My pull wakeup callback */
+  b_cbv pull_cb;
+  void  pull_fn();
+  bool  pull_ready;
+  
+  /** My push wakeup callback */
+  b_cbv push_cb;
+  void  push_fn();
+  bool  push_ready;
+
+  /** Turned on or off */
+  bool  running;
+  b_cbv run_cb;
+
+  /** Number of tuples to push */
+  int mNTuple;
 
   void run();
-  void pullWakeup();
-  void pushWakeup();
-
-  typedef boost::function<void ()> RunCB;
-  class Runnable : public IRunnable {
-  public:
-    Runnable(RunCB);
-    void run();
-    virtual void state(IRunnable::State);
-
-    bool mPullPending;
-    bool mPushPending;
-
-  private:
-    RunCB _runCB;
-  };
-
-  typedef boost::shared_ptr<Runnable> RunnablePtr;
-  RunnablePtr _runnable;
-
-  int mNTuple;
-  bool _register;
-
-  b_cbv mPullUnblock;
-  b_cbv mPushUnblock;
 
 private:
   DECLARE_PRIVATE_ELEMENT_INITS

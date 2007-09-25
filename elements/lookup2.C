@@ -14,9 +14,8 @@
 #include "lookup2.h"
 #include "val_str.h"
 #include "val_list.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "plumber.h"
-#include "scheduler.h"
 
 DEFINE_ELEMENT_INITS(Lookup2, "Lookup2");
 
@@ -26,7 +25,6 @@ Lookup2::Lookup2(string name,
                  CommonTable::Key indexKey,
                  b_cbv state_cb)
   : Element(name, 1, 1),
-    _stateProxy(new IStateful()),
     _table(table),
     _pushCallback(0),
     _pullCallback(0),
@@ -48,7 +46,6 @@ Lookup2::Lookup2(string name,
  */
 Lookup2::Lookup2(TuplePtr args)
   : Element(Val_Str::cast((*args)[2]), 1, 1),
-    _stateProxy(new IStateful()),
     _table(Plumber::catalog()->table(Val_Str::cast((*args)[3]))),
     _pushCallback(0),
     _pullCallback(0),
@@ -57,12 +54,12 @@ Lookup2::Lookup2(TuplePtr args)
   ListPtr lookupKey = Val_List::cast((*args)[4]);
   for (ValPtrList::const_iterator i = lookupKey->begin();
        i != lookupKey->end(); i++)
-    _lookupKey.push_back(Val_UInt32::cast(*i));
+    _lookupKey.push_back(Val_Int64::cast(*i));
 
   ListPtr indexKey = Val_List::cast((*args)[5]);
   for (ValPtrList::const_iterator i = indexKey->begin();
        i != indexKey->end(); i++)
-    _indexKey.push_back(Val_UInt32::cast(*i));
+    _indexKey.push_back(Val_Int64::cast(*i));
 
   // If the two keys are identical, then we need not use projections.
   _project = (_lookupKey != _indexKey);
@@ -76,7 +73,6 @@ Lookup2::~Lookup2()
 int
 Lookup2::initialize()
 {
-  Plumber::scheduler()->stateful(_stateProxy);
   return 0;
 }
 
@@ -106,7 +102,6 @@ Lookup2::push(int port,
     ELEM_INFO("push: accepted lookup for tuple "
               << _lookupTuple->toString());
     
-    _stateProxy->state(IStateful::STATEFUL);
     // Unblock the puller if one is waiting
     if (_pullCallback) {
       ELEM_INFO("push: wakeup puller");
@@ -179,8 +174,6 @@ Lookup2::pull(int port,
       _lookupTupleValue.reset();
       _iterator.reset();
       ELEM_WORDY("push: iterator now is null");
-      
-      _stateProxy->state(IStateful::STATELESS);
 
       // Wake up any pusher
       if (_pushCallback) {

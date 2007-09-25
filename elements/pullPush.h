@@ -21,54 +21,37 @@
 
 #include "element.h"
 #include "elementRegistry.h"
-#include <iRunnable.h>
 
 class PullPush : public Element { 
- public:
+public:
   
-  /** Initialized with the interval between forwards. */
   PullPush(string name);
-
   PullPush(TuplePtr);
-
+  
   const char *class_name() const		{ return "PullPush"; }
   const char *flow_code() const			{ return "-/-"; }
   const char *processing() const		{ return "l/h"; }
-
+  
   /*overriding element code*/
   int initialize();
-
+  
   DECLARE_PUBLIC_ELEMENT_INITS
+  
+private:
+  
+  /** My pull wakeup callback */
+  b_cbv pull_cb;
+  void  pull_fn();
+  bool  pull_ready;
+  
+  /** My push wakeup callback */
+  b_cbv push_cb;
+  void  push_fn();
+  bool  push_ready;
+  
+  void  run();
 
- private:
-   void pullWakeup();
-   void pushWakeup();
-   void run();
-
-   //Proxy object to bridge with scheduler
-   typedef boost::function<void ()> RunCB;
-   class Runnable : public IRunnable {
-   public:
-     Runnable(RunCB);
-     void run();
-     virtual void state(IRunnable::State);
-
-     bool _pullPending;
-     bool _pushPending;
-   private:
-     RunCB _runCB;
-   };
-   typedef boost::shared_ptr<Runnable> RunnablePtr;
-
-   RunnablePtr _runnable;
-
-   /** My pull wakeup callback */
-   b_cbv _unblockPull;
-
-   /** My push wakeup callback */
-   b_cbv _unblockPush;
-
-   DECLARE_PRIVATE_ELEMENT_INITS
+  DECLARE_PRIVATE_ELEMENT_INITS
 };
 
 #endif /* __PULL_PUSH_H_ */

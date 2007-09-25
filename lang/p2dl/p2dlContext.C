@@ -26,9 +26,6 @@
 #include "val_vector.h"
 #include "val_matrix.h"
 #include "val_list.h"
-#include "val_uint32.h"
-#include "val_int32.h"
-#include "val_uint64.h"
 #include "val_int64.h"
 #include "val_str.h"
 #include "val_time.h"
@@ -92,8 +89,8 @@ namespace compile {
       else {
         if (!v) throw p2dl::Exception(0, "Bad port value! " + _port->toString());
         
-        if (v->value()->typeCode() == ::Value::UINT32) 
-          return Val_UInt32::cast(v->value());
+        if (v->value()->typeCode() == ::Value::INT64) 
+          return Val_Int64::cast(v->value());
         else return e->element()->input(v->value());
       }
       assert(0);
@@ -110,8 +107,8 @@ namespace compile {
       else {
         if (!v) throw p2dl::Exception(0, "Bad port value! " + _port->toString());
         
-        if (v->value()->typeCode() == ::Value::UINT32) 
-          return Val_UInt32::cast(v->value());
+        if (v->value()->typeCode() == ::Value::INT64) 
+          return Val_Int64::cast(v->value());
         else return e->element()->output(v->value());
       }
       assert(0);
@@ -139,8 +136,8 @@ namespace compile {
 
       _dataflow.reset(
         new Plumber::Dataflow(n->toString(), 
-                              Val_UInt32::cast(inputs->value()),
-                              Val_UInt32::cast(outputs->value()),
+                              Val_Int64::cast(inputs->value()),
+                              Val_Int64::cast(outputs->value()),
                               Val_Str::cast(proccessing->value()),
                               Val_Str::cast(flow_code->value())));
       _statements = s;
@@ -325,7 +322,7 @@ namespace compile {
 
       _name = name->toString(); 
       _ttl  = boost::posix_time::duration_from_string(ttl->toString());
-      _size = Val_UInt32::cast(v->value());
+      _size = Val_Int64::cast(v->value());
       _key  = key;
     }
 

@@ -21,8 +21,7 @@ class ElementLoader
 {
 public:
   /** Load all known elements */
-  static void
-  loadElements();
+  static void loadElements();
 };
 
 #endif

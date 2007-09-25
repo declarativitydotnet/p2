@@ -33,18 +33,7 @@ ID::ID(uint32_t newWords[ID::WORDS])
 }
 
 
-ID::ID(uint32_t word)
-{
-  for (unsigned i = 0;
-       i < WORDS;
-       i++) {
-    words[i] = 0;
-  }
-  words[WORDS - 1] = word;
-}
-
-
-ID::ID(uint64_t doubleword)
+ID::ID(int64_t doubleword)
 {
   for (unsigned i = 0;
        i < WORDS;
@@ -54,7 +43,6 @@ ID::ID(uint64_t doubleword)
   words[WORDS - 1] = doubleword & 0xFFFFFFFF;
   words[WORDS - 2] = (doubleword >> 32) & 0xFFFFFFFF;
 }
-
 
 ID::ID(std::string hexString)
 {
@@ -429,11 +417,11 @@ ID::xdr_unmarshal(XDR *x)
 
 
 IDPtr
-ID::ZERO(ID::mk((uint32_t) 0));
+ID::ZERO(ID::mk(0LL));
 
 
 IDPtr
-ID::ONE(ID::mk((uint32_t) 1));
+ID::ONE(ID::mk(1LL));
 
 
 std::ostream&

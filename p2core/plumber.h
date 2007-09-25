@@ -19,16 +19,14 @@
 #ifndef __PLUMBER_H__
 #define __PLUMBER_H__
 
-#include <inlines.h>
-#include <fstream>
 #include <element.h>
 #include <elementSpec.h>
 #include <loggerI.h>
 #include <dot.h>
 #include <table2.h>
 
-class Scheduler;
-class CommitManager;
+#include <inlines.h>
+#include <fstream>
 
 /** A handy dandy type for plumber references */
 class Plumber;
@@ -239,13 +237,6 @@ public:
    *  Return: 0 on success, -1 on failure.  */
   static int install(DataflowPtr d);
 
-  /** Return the scheduler */
-  //currently, it is assumed we have exactly one scheduler
-  //for multi-DF support, it would require some support
-  //from the DF language, primarily concerning assignment
-  //of elements to schedulers
-  static Scheduler* scheduler();
-
   /** Output in .dot format a representation of this dataflow */
   static void toDot(string f);
 
@@ -275,9 +266,6 @@ private:
 
   /** The list of installed dataflows */
   static std::map< string, DataflowPtr > _dataflows;
-
-  /** The scheduler */
-  static Scheduler _scheduler;
 
   /** My local logger */
   LoggerI * _logger;

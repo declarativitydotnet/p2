@@ -24,7 +24,7 @@
 #include "element.h"
 #include "elementRegistry.h"
 
-struct timeCBHandle;
+#include "eventLoop.h"
 
 class TimedPullPush : public Element { 
  public:
@@ -67,7 +67,7 @@ class TimedPullPush : public Element {
   b_cbv _runTimerCB;
 
   /** My time callback ID. */
-  timeCBHandle * _timeCallback;
+  EventLoop::TimerID _timeCallback;
 
   /** My pull wakeup method */
   void pullWakeup();

@@ -19,8 +19,7 @@
 #include "elementRegistry.h"
 #include "inlines.h"
 #include "tupleseq.h"
-
-struct timeCBHandle;
+#include "eventLoop.h"
 
 class RateCCT : public Element {
 public:
@@ -56,10 +55,10 @@ private:
   uint32_t  rrate_;			// Receiver tuple rate (tuples/sec)
   uint32_t  rtt_;			// Estimated round trip time
   uint32_t  rto_;			// The round-trip timeout
-  timeCBHandle  *nofeedback_;		// No feedback timer
+  EventLoop::TimerID nofeedback_;		// No feedback timer
   boost::posix_time::ptime  tld_;	// Time last doubled (for slow start)
 
-  typedef std::map<SeqNum, timeCBHandle*> SeqTimeCBMap;
+  typedef std::map<SeqNum, EventLoop::TimerID> SeqTimeCBMap;
   typedef std::map<ValuePtr, boost::shared_ptr<SeqTimeCBMap>,
                    Value::Comparator> ValueSeqTimeCBMap;
   ValueSeqTimeCBMap index_;		// Map containing unacked in transit tuples

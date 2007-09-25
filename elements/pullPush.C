@@ -12,112 +12,79 @@
  * 
  */
 
-#include <pullPush.h>
-#include <element.h>
-#include <math.h>
+#include "pullPush.h"
 
-#include "loop.h"
+#include "eventLoop.h"
 #include "val_str.h"
-#include "val_uint64.h"
+#include "val_int64.h"
 #include "reporting.h"
-#include "val_int32.h"
-#include "scheduler.h"
-#include "boost/bind.hpp"
 
-DEFINE_ELEMENT_INITS(PullPush, "PullPush")
+DEFINE_ELEMENT_INITS(PullPush, "PullPush");
 
+//
+// We initialize the element with pull_ready = false (but with a DPC
+// enqueued to set it to true - see initialize below), but with
+// push_ready = true.  As soon as a tuple becomes available for
+// pulling, the element will go off and push it. 
+//
 PullPush::PullPush(string name)
   : Element(name, 1, 1),
-    _runnable(new PullPush::Runnable(boost::bind(&PullPush::run, this))),
-    _unblockPull(boost::bind(&PullPush::pullWakeup, this)),
-    _unblockPush(boost::bind(&PullPush::pushWakeup, this))
+    pull_cb(boost::bind(&PullPush::pull_fn, this)),
+    pull_ready(false),
+    push_cb(boost::bind(&PullPush::push_fn, this)),
+    push_ready(true)
 {
 }
 
 PullPush::PullPush(TuplePtr args)
   : Element(Val_Str::cast((*args)[2]),1,1),
-    _runnable(new PullPush::Runnable(boost::bind(&PullPush::run, this))),
-    _unblockPull(boost::bind(&PullPush::pullWakeup, this)),
-    _unblockPush(boost::bind(&PullPush::pushWakeup, this))
+    pull_cb(boost::bind(&PullPush::pull_fn, this)),
+    pull_ready(false),
+    push_cb(boost::bind(&PullPush::push_fn, this)),
+    push_ready(true)
 {
 }
 
 int PullPush::initialize()
 {
   ELEM_INFO("Initialising");
-  Plumber::scheduler()->runnable(_runnable);
+  // What's this?  Well, this causes a not-so-spurious pull wakeup at
+  // start of day as soon as the element is activated and an event
+  // arrives.  This ensures that the pull process can "get started",
+  // thereafter the element is either waiting for a pull or push
+  // callback which it has registered, or it's actually executing in
+  // the run loop. 
+  EventLoop::loop()->enqueue_dpc(pull_cb);
   return 0;
+}
+
+void PullPush::pull_fn()
+{
+  pull_ready = true;
+  run();
+}
+
+void PullPush::push_fn()
+{
+  push_ready = true;
+  run();
 }
 
 void PullPush::run() {
   ELEM_INFO("PullPush running..."); 
 
-  //keep pushing until either blocked or quiesced
-  while(true) {
-    TuplePtr p = input(0)->pull(_unblockPull);
-    if(p){
-      int r = output(0)->push(p, _unblockPush);
-      if(r==0){
-	ELEM_INFO("PullPush BLOCKED!");
-        _runnable->_pushPending = true;
-	//as the element itself does not require such info
-	//states are stored in the proxy object for that purpose
-        _runnable->state(IRunnable::BLOCKED);
-        return;
+  while (pull_ready && push_ready) {
+    TuplePtr p = input(0)->pull(pull_cb);
+    if ( p ) {
+      if ( (output(0)->push(p, push_cb)) == 0 ) {
+	ELEM_INFO("PullPush blocked by push()...");
+        push_ready = false;
+	break;
       }
-    }else{
-      ELEM_INFO("PullPush QUIESCED!");
-      _runnable->_pullPending = true;
-      _runnable->state(IRunnable::QUIECENE);
-      return;
-    }
-  }
-}
-
-void PullPush::pullWakeup()
-{
-  _runnable->_pullPending = false;
-  //new input and downstream clear, signal active
-  if (!_runnable->_pushPending) {
-    _runnable->state(IRunnable::ACTIVE);
-  }
-}
-
-void PullPush::pushWakeup()
-{
-  _runnable->_pushPending = false;
-  //downward available, input possible, signal active
-  if (!_runnable->_pullPending) {
-    _runnable->state(IRunnable::ACTIVE);
-  }
-}
-
-PullPush::Runnable::Runnable(PullPush::RunCB cb) 
-  : _pullPending(false),_pushPending(false), _runCB(cb)
-{
-}
-
-void PullPush::Runnable::run()
-{
-  assert(IRunnable::state() == IRunnable::ACTIVE);
-  _runCB(); 
-}
-
-
-//State code for the proxy object
-void PullPush::Runnable::state(IRunnable::State state)
-{
-  if (state == IRunnable::OFF) {
-    IRunnable::state(IRunnable::OFF);
-  }
-  else if( (state == IRunnable::ACTIVE) ){
-    if(!(_pullPending || _pushPending)) {
-      IRunnable::state(state);
     } else {
-      assert(0);//for debug purposes
+      ELEM_INFO("PullPush blocked on pull");
+      pull_ready = false;
+      break;
     }
-  }
-  else {
-    IRunnable::state(IRunnable::BLOCKED);
   }
 }

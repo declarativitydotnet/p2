@@ -12,8 +12,7 @@
 
 #include <iostream>
 #include "dupRemove.h"
-#include "val_uint64.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "val_double.h"
 #include "val_str.h"
 #include "val_tuple.h"
@@ -29,8 +28,8 @@ DupRemove::DupRemove(TuplePtr args)
 
 bool DupRemove::Connection::received(TuplePtr tp) {
   ValuePtr src = (*tp)[SRC]; 
-  SeqNum seq  = Val_UInt64::cast((*tp)[SEQ]);
-  SeqNum cseq = Val_UInt64::cast((*tp)[CUMSEQ]);
+  SeqNum seq  = Val_Int64::cast((*tp)[SEQ]);
+  SeqNum cseq = Val_Int64::cast((*tp)[CUMSEQ]);
 
   if (_cum_seq < cseq) {
     if (_cum_seq && _receiveMap.size() > 0) {
@@ -51,16 +50,15 @@ bool DupRemove::Connection::received(TuplePtr tp) {
   return false;
 }
 
-long DupRemove::Connection::touch_duration() const {
-  boost::posix_time::ptime now;
-  getTime(now);
-
-  boost::posix_time::time_duration duration = now - last_touched;
+long DupRemove::Connection::touch_duration() 
+{
+  boost::posix_time::time_duration duration = 
+    boost::posix_time::microsec_clock::universal_time() - last_touched;
   return duration.seconds();
 }
 
 void DupRemove::Connection::touch() {
-  getTime(last_touched);
+  last_touched = boost::posix_time::microsec_clock::universal_time();
 }
 
 int DupRemove::push(int port, TuplePtr tp, b_cbv cb)
@@ -68,11 +66,11 @@ int DupRemove::push(int port, TuplePtr tp, b_cbv cb)
   assert(port == 0);
 
   ValuePtr src = (*tp)[SRC];
-  SeqNum  cseq = Val_UInt64::cast((*tp)[CUMSEQ]);
+  SeqNum  cseq = Val_Int64::cast((*tp)[CUMSEQ]);
   ConnectionPtr cp = lookup(src);
 
   if (cseq == 0 && cp) {
-    if (cp->_tcb != NULL) timeCBRemove(cp->_tcb);
+    if (cp->_tcb != 0) EventLoop::loop()->cancel_timer(cp->_tcb);
     unmap(src);
     cp.reset();
   }
@@ -83,10 +81,10 @@ int DupRemove::push(int port, TuplePtr tp, b_cbv cb)
   }
   cp->touch();
 
-  if (cp->_tcb != NULL) 
-    timeCBRemove(cp->_tcb);
-  cp->_tcb = delayCB(CONNECTION_TIMEOUT,
-                     boost::bind(&DupRemove::unmap, this, src), this);
+  if (cp->_tcb != 0) 
+    EventLoop::loop()->cancel_timer(cp->_tcb);
+  cp->_tcb = EventLoop::loop()->enqueue_timer(CONNECTION_TIMEOUT,
+                     boost::bind(&DupRemove::unmap, this, src));
   if (!cp->received(tp))
     return output(0)->push(tp, cb);
   return 1;

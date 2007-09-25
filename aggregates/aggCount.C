@@ -11,46 +11,36 @@
  */
 
 #include "aggCount.h"
-#include "val_uint64.h"
+#include "val_int64.h"
 #include "aggFactory.h"
 
 AggCount::AggCount()
 {
 }
 
-
 AggCount::~AggCount()
 {
 }
-
   
-void
-AggCount::reset()
+void AggCount::reset()
 {
   _current = 0;
 }
-  
 
-void
-AggCount::first(ValuePtr v)
+void AggCount::first(ValuePtr v)
 {
   _current = 1;
 }
-  
 
-void
-AggCount::process(ValuePtr v)
+void AggCount::process(ValuePtr v)
 {
   _current++;
 }
 
-
-ValuePtr 
-AggCount::result()
+ValuePtr AggCount::result()
 {
-  return Val_UInt64::mk(_current);
+  return Val_Int64::mk(_current);
 }
-
 
 // This is necessary for the class to register itself with the
 // factory.

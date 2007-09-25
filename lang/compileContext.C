@@ -16,7 +16,7 @@
 #include "systemTable.h"
 #include "val_list.h"
 #include "val_str.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "val_tuple.h"
 
 namespace compile {

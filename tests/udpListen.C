@@ -41,7 +41,7 @@
 #include "slot.h"
 #include "val_str.h"
 #include "val_tuple.h"
-#include "val_uint64.h"
+#include "val_int64.h"
 #include "demux.h"
 #include "roundRobin.h"
 #include "marshalField.h"
@@ -53,8 +53,6 @@ void
 listenForMessages(std::string ipAddress,
                   int port)
 {
-  eventLoopInitialize();
-
   // The sending data flow
   PlumberPtr plumber(new Plumber());
   Plumber::DataflowPtr conf(new Plumber::Dataflow("test"));
@@ -88,7 +86,7 @@ listenForMessages(std::string ipAddress,
   }
 
   // Run the plumber
-  eventLoop();
+  EventLoop::loop()->start();
 }
 
 

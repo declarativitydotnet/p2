@@ -26,7 +26,7 @@
 #include "commonTable.h"
 #include "tableManager.h"
 #include "systemTable.h"
-#include "loop.h"
+#include "eventLoop.h"
 #include "reporting.h"
 #include "elementLoader.h"
 #include "netLoader.h"
@@ -366,11 +366,10 @@ main(int argc, char **argv)
 
     string dfdesc = stub(myHostname, myPort, TERMINAL);
 
-    eventLoopInitialize();
     compile::Context *context = new compile::p2dl::Context("p2dl", dfdesc);
     Plumber::toDot("runOverlog.dot");
     delete context;
-    eventLoop(); 
+    EventLoop::loop()->start(); 
   } catch (TableManager::Exception& e) {
     std::cerr << e.toString() << std::endl;
   } catch (compile::Exception& e) {

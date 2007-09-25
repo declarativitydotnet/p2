@@ -13,7 +13,7 @@
 
 #include "duplicateConservative.h"
 #include "val_str.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include <boost/bind.hpp>
 
 DEFINE_ELEMENT_INITS(DuplicateConservative, "DuplicateConservative");
@@ -32,10 +32,10 @@ DuplicateConservative::DuplicateConservative(string name, int outputs)
  * Generic constructor.
  * Arguments:
  * 2. Val_Str:    Element Name.
- * 3. Val_UInt32: Number of outputs.
+ * 3. Val_Int64: Number of outputs.
  */
 DuplicateConservative::DuplicateConservative(TuplePtr args)
-  : Element(Val_Str::cast((*args)[2]), 1, Val_UInt32::cast((*args)[3])),
+  : Element(Val_Str::cast((*args)[2]), 1, Val_Int64::cast((*args)[3])),
     _push_cb(0),
     _block_flags(),
     _block_flag_count(0)

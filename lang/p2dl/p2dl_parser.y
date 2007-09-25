@@ -14,7 +14,7 @@
   #include <iostream>
   #include "val_str.h"
   #include "val_list.h"
-  #include "val_uint32.h"
+  #include "val_int64.h"
   #include "val_tuple.h"
   #include "p2dlContext.h"
 
@@ -157,14 +157,14 @@ editstrandlist: editstrandlink
 
 editstrandlink: editstrandatom 
                   { $$ = new compile::p2dl::Link($1, 
-                    new compile::p2dl::Port(new compile::p2dl::Value(Val_UInt32::mk(0))), 
-                    new compile::p2dl::Port(new compile::p2dl::Value(Val_UInt32::mk(0)))); }
+                    new compile::p2dl::Port(new compile::p2dl::Value(Val_Int64::mk(0))), 
+                    new compile::p2dl::Port(new compile::p2dl::Value(Val_Int64::mk(0)))); }
               | P2DL_LSQUB port P2DL_RSQUB editstrandatom
                   { $$ = new compile::p2dl::Link($4, $2, 
-                    new compile::p2dl::Port(new compile::p2dl::Value(Val_UInt32::mk(0)))); }
+                    new compile::p2dl::Port(new compile::p2dl::Value(Val_Int64::mk(0)))); }
               | editstrandatom P2DL_LSQUB port P2DL_RSQUB
                   { $$ = new compile::p2dl::Link($1, 
-                    new compile::p2dl::Port(new compile::p2dl::Value(Val_UInt32::mk(0))), $3); }
+                    new compile::p2dl::Port(new compile::p2dl::Value(Val_Int64::mk(0))), $3); }
               | P2DL_LSQUB port P2DL_RSQUB 
                 editstrandatom P2DL_LSQUB port P2DL_RSQUB
                   { $$ = new compile::p2dl::Link($4, $2, $6); }
@@ -204,12 +204,12 @@ key: P2DL_LPAR keylist P2DL_RPAR
    ;
 
 keylist: P2DL_UNSIGNED 
-           { unsigned k = Val_UInt32::cast(dynamic_cast<compile::p2dl::Value*>($1)->value());
+           { unsigned k = Val_Int64::cast(dynamic_cast<compile::p2dl::Value*>($1)->value());
              $$ = new Table2::Key(); 
              $$->push_back(k); }
          | 
          P2DL_UNSIGNED P2DL_COMMA keylist 
-           { unsigned k = Val_UInt32::cast(dynamic_cast<compile::p2dl::Value*>($1)->value());
+           { unsigned k = Val_Int64::cast(dynamic_cast<compile::p2dl::Value*>($1)->value());
              $$ = $3; 
              $$->insert($$->begin(), k); }
          ; 
@@ -252,14 +252,14 @@ strandlist: strandlink
 
 strandlink: strandatom 
        { $$ = new compile::p2dl::Link($1, 
-         new compile::p2dl::Port(new compile::p2dl::Value(Val_UInt32::mk(0))), 
-         new compile::p2dl::Port(new compile::p2dl::Value(Val_UInt32::mk(0)))); }
+         new compile::p2dl::Port(new compile::p2dl::Value(Val_Int64::mk(0))), 
+         new compile::p2dl::Port(new compile::p2dl::Value(Val_Int64::mk(0)))); }
     | P2DL_LSQUB port P2DL_RSQUB strandatom
        { $$ = new compile::p2dl::Link($4, $2, 
-         new compile::p2dl::Port(new compile::p2dl::Value(Val_UInt32::mk(0)))); }
+         new compile::p2dl::Port(new compile::p2dl::Value(Val_Int64::mk(0)))); }
     | strandatom P2DL_LSQUB port P2DL_RSQUB
        { $$ = new compile::p2dl::Link($1, 
-         new compile::p2dl::Port(new compile::p2dl::Value(Val_UInt32::mk(0))), $3); }
+         new compile::p2dl::Port(new compile::p2dl::Value(Val_Int64::mk(0))), $3); }
     | P2DL_LSQUB port P2DL_RSQUB 
       strandatom P2DL_LSQUB port P2DL_RSQUB
        { $$ = new compile::p2dl::Link($4, $2, $6); }

@@ -14,48 +14,42 @@
 
 #include "delete2.h"
 #include "plumber.h"
+#include "eventLoop.h"
 #include "val_str.h"
-#include "scheduler.h"
 
 DEFINE_ELEMENT_INITS(Delete2, "Delete2");
 
-Delete2::Action::Action(CommonTablePtr tbl) : _table(tbl) {}
-
-void Delete2::Action::commit()
-{
-  for (TupleSet::iterator i = _buffer.begin(); 
-       i != _buffer.end(); i++) {
-    _table->remove(*i);
-  }
-  _buffer.clear();
-}
-
-void Delete2::Action::abort()
-{
-  _buffer.clear();
-}
-
 Delete2::Delete2(string name, CommonTablePtr table)
-  : Element(name, 1, 0), _action(new Delete2::Action(table))
+  : Element(name, 1, 0), 
+    _table(table),
+    _action_cl(boost::bind(&Delete2::_action, this)),
+    _action_queued(false)
 {
 }
 
 Delete2::Delete2(TuplePtr args)
   : Element(Val_Str::cast((*args)[2]),1,0),
-    _action(new Delete2::Action(Plumber::catalog()->table(Val_Str::cast((*args)[3]))))
+    _table(Plumber::catalog()->table((*args)[3]->toString())),
+    _action_cl(boost::bind(&Delete2::_action, this)),
+    _action_queued(false)
 {
 }
 
-int 
-Delete2::initialize()
+void Delete2::_action()
 {
-  Plumber::scheduler()->action(_action);
-  return 0;
+  for (TupleSet::iterator i = _buffer.begin(); i != _buffer.end(); i++) {
+    _table->remove(*i);
+  }
+  _buffer.clear();
+  _action_queued = false;
 }
 
-int
-Delete2::push(int port, TuplePtr t, b_cbv cb)
+int Delete2::push(int port, TuplePtr t, b_cbv cb)
 {
-  _action->addTuple(t);
+  _buffer.insert(t);
+  if (!_action_queued) {
+    _action_queued = true;
+    EventLoop::loop()->enqueue_action(_action_cl);
+  }
   return 1;
 }

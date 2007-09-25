@@ -36,11 +36,9 @@
  */
 
 #include "aggwrap2Callback.h"
-#include "val_int32.h"
 #include "val_str.h"
 #include "val_null.h"
-#include "loop.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "list.h"
 #include "val_list.h"
 #include <boost/bind.hpp>
@@ -94,8 +92,8 @@ Aggwrap2Callback::Aggwrap2Callback(std::string n,
  * Arguments:
  * 2. Val_Str:    Element Name.
  * 3. Val_Str:    Function Name.
- * 4. Val_Int32:  Aggregation field number. (Value < 0) => (_starAgg == true)
- * 5. Val_UInt32: Star agg indicator.
+ * 4. Val_Int64:  Aggregation field number. (Value < 0) => (_starAgg == true)
+ * 5. Val_Int64: Star agg indicator.
  * 6. Val_List:   Group by fields. 
  * 7. Val_Str:    Result tuple name.
  */
@@ -116,8 +114,8 @@ Aggwrap2Callback::Aggwrap2Callback(TuplePtr args)
 {
   string functionName = Val_Str::cast((*args)[3]);
 
-  _aggField = Val_Int32::cast((*args)[4]);
-  _starAgg = Val_UInt32::cast((*args)[5]);
+  _aggField = Val_Int64::cast((*args)[4]);
+  _starAgg = Val_Int64::cast((*args)[5]);
 
   try {
     _aggregateFn = AggFactory::mk(functionName);
@@ -131,7 +129,7 @@ Aggwrap2Callback::Aggwrap2Callback(TuplePtr args)
   ListPtr groupByFields = Val_List::cast((*args)[6]);
   for (ValPtrList::const_iterator i = groupByFields->begin();
        i != groupByFields->end(); i++)
-    registerGroupbyField(Val_UInt32::cast(*i));
+    registerGroupbyField(Val_Int64::cast(*i));
 
   _resultTupleName = Val_Str::cast((*args)[7]);
 }

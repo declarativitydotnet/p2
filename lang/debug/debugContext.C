@@ -17,8 +17,6 @@
 #include "value.h"
 #include "val_str.h"
 #include "val_null.h"
-#include "val_uint32.h"
-#include "val_int32.h"
 #include "val_int64.h"
 #include "val_list.h"
 #include "val_tuple.h"
@@ -64,7 +62,7 @@ namespace compile {
       for (int pos = 0; true; pos++) {
         TuplePtr lookup = Tuple::mk();
         lookup->append((*rule)[TUPLE_ID]);
-        lookup->append(Val_UInt32::mk(pos));
+        lookup->append(Val_Int64::mk(pos));
         lookup->freeze();
         TuplePtr lookup2 = Tuple::mk();
         lookup2->append((*rule)[TUPLE_ID]);

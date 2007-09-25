@@ -19,7 +19,7 @@
 #include "val_tuple.h"
 #include "val_time.h"
 #include "val_str.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include <math.h>
 
 #ifndef SKIP
@@ -227,8 +227,8 @@ TuplePtr RuleTracer::createExecTuple(ExecRecord *e)
   t->append(Val_Str::mk("ruleExecTable"));
   t->append(Val_Str::mk(getNode()));
   t->append(Val_Str::mk(e->ruleId));
-  t->append(Val_UInt32::mk(e->tupleIn));
-  t->append(Val_UInt32::mk(e->tupleOut));
+  t->append(Val_Int64::mk(e->tupleIn));
+  t->append(Val_Int64::mk(e->tupleOut));
   t->append(Val_Str::mk(e->remoteNode));
   t->append(Val_Time::mk(e->timeIn));
   t->append(Val_Time::mk(e->timeOut));
@@ -248,8 +248,8 @@ int RuleTracer::createExecTupleUsingPrecond(ExecRecord *e,
     t->append(Val_Str::mk("ruleExecTable"));
     t->append(Val_Str::mk(getNode()));
     t->append(Val_Str::mk(e->ruleId));
-    t->append(Val_UInt32::mk(e->precond[i]));
-    t->append(Val_UInt32::mk(e->tupleOut));
+    t->append(Val_Int64::mk(e->precond[i]));
+    t->append(Val_Int64::mk(e->tupleOut));
     t->append(Val_Str::mk(e->remoteNode));
     t->append(Val_Time::mk(e->timeIn));
     t->append(Val_Time::mk(e->timeOut));
@@ -271,7 +271,7 @@ RuleTracer::createTupleTableTuple(TuplePtr t)
     return TuplePtr();
 
   // This assumes that the tuple table has a primary key on field 2.
-  (*TUPLETABLETUPLE)[2] = Val_UInt32::mk(t->ID());
+  (*TUPLETABLETUPLE)[2] = Val_Int64::mk(t->ID());
   Table2::Iterator it = _tupleTable->lookup(Table2::theKey(CommonTable::KEY2), TUPLETABLETUPLE);
   int count = 0;
   while(!it->done()){
@@ -284,16 +284,16 @@ RuleTracer::createTupleTableTuple(TuplePtr t)
   TuplePtr t_new = Tuple::mk();
   t_new->append(Val_Str::mk("tupleTable"));
   t_new->append(Val_Str::mk(getNode()));
-  t_new->append(Val_UInt32::mk(t->ID()));
+  t_new->append(Val_Int64::mk(t->ID()));
   //t_new->append(Val_Tuple::mk(t));
   if(getSourceNode(t) != "-")
     t_new->append(Val_Str::mk(getSourceNode(t)));
   else
     t_new->append(Val_Str::mk(getLocalNode(t)));
   if(getIdAtSource(t) != 0)
-    t_new->append(Val_UInt32::mk(getIdAtSource(t)));
+    t_new->append(Val_Int64::mk(getIdAtSource(t)));
   else
-    t_new->append(Val_UInt32::mk(t->ID()));
+    t_new->append(Val_Int64::mk(t->ID()));
 
   //boost::posix_time::ptime timedd;
   //getTime(timedd);
@@ -329,7 +329,7 @@ bool RuleTracer::skip(TuplePtr t)
 uint32_t RuleTracer::getIdAtSource(TuplePtr t)
 { 
   if(t->tag("ID"))
-    return Val_UInt32::cast(t->tag("ID"));
+    return Val_Int64::cast(t->tag("ID"));
   else
     return 0;
 }
@@ -367,7 +367,7 @@ RuleTracer::Initializer::Initializer()
   // The tuple table tuple needs up to field 2
   TUPLETABLETUPLE->append(Val_Str::mk("tupleTable"));
   TUPLETABLETUPLE->append(Val_Str::mk("nodeID"));
-  TUPLETABLETUPLE->append(Val_UInt32::mk(0));
+  TUPLETABLETUPLE->append(Val_Int64::mk(0));
 }
 
 

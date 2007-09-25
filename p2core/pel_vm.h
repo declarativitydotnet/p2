@@ -19,12 +19,12 @@
 
 #include <deque>
 #include <vector>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include "val_list.h"
 #include "tuple.h"
 #include "pel_program.h"
 #include "ID.h"
-#include "loop.h"
 
 class Pel_VM {
 

@@ -17,10 +17,13 @@
 #define __UDP_H__
 
 #include "element.h"
+
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-#include "loop.h"
+
 #include "elementRegistry.h"
+#include "p2net.h"
+#include "eventLoop.h"
 
 //
 // The Udp::Rx element emits 2-tuples:
@@ -83,8 +86,12 @@ public:
     const char *processing() const		{ return "l/"; };
     const char *flow_code() const		{ return "-/"; };
 
-    void socket_on() { fileDescriptorCB(u->sd, b_selwrite, boost::bind(&Udp::Tx::socket_cb, this));};
-    void socket_off() { removeFileDescriptorCB(u->sd, b_selwrite); };
+    void socket_on() { 
+      EventLoop::loop()->add_write_fcb(u->sd, boost::bind(&Udp::Tx::socket_cb, this));
+    };
+    void socket_off() { 
+      EventLoop::loop()->del_write_fcb(u->sd);
+    };
 
     /** Turn on the socket */
     virtual int initialize();

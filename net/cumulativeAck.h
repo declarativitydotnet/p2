@@ -12,14 +12,14 @@
 #ifndef __CUMULATIVEACK_H__
 #define __CUMULATIVEACK_H__
 
-#include <map>
-#include <vector>
 #include "tuple.h"
 #include "element.h"
 #include "elementRegistry.h"
 #include "inlines.h"
 #include "tupleseq.h"
-#include "loop.h"
+#include "eventLoop.h"
+#include <map>
+#include <vector>
 
 
 class CumulativeAck : public Element {
@@ -29,25 +29,24 @@ public:
   const char *class_name() const { return "CumulativeAck";};
   const char *processing() const { return "a/a"; };
   const char *flow_code() const	 { return "-/-"; };
-
+  
   TuplePtr simple_action(TuplePtr p);
-
+  
   DECLARE_PUBLIC_ELEMENT_INITS
-
+  
 private:
   class Connection {
-    public:
-      Connection() 
-        : _tcb(NULL), _cum_seq(0) { }
-
-      void confirm(SeqNum);
-
-      timeCBHandle*         _tcb;
-      SeqNum                _cum_seq;
-      std::vector<SeqNum>   _queue; 
+  public:
+    Connection() : _tcb(0), _cum_seq(0) { }
+    
+    void confirm(SeqNum);
+    
+    EventLoop::TimerID	_tcb;
+    SeqNum              _cum_seq;
+    std::vector<SeqNum> _queue; 
   };
   typedef boost::shared_ptr<Connection> ConnectionPtr;
-
+  
   REMOVABLE_INLINE void map(ValuePtr, ConnectionPtr);
   REMOVABLE_INLINE void unmap(ValuePtr);
   REMOVABLE_INLINE ConnectionPtr lookup(ValuePtr);

@@ -9,12 +9,12 @@
  * 
  */
 
+#include "cct.h"
+
 #include <algorithm>
 #include <iostream>
-#include "loop.h"
-#include "cct.h"
-#include "val_uint64.h"
-#include "val_uint32.h"
+#include "eventLoop.h"
+#include "val_int64.h"
 #include "val_double.h"
 #include "val_str.h"
 #include "val_tuple.h"
@@ -33,13 +33,13 @@ class CCTuple
 public:
   CCTuple() {}
   CCTuple(ValuePtr dest, SeqNum seq) 
-    : dest_(dest), seq_(seq), tcb_(NULL), wnd_(true) { }
+    : dest_(dest), seq_(seq), tcb_(0), wnd_(true) { }
 
   void operator()(std::pair<const SeqNum, CCTuple*>& entry); 
 
   ValuePtr      dest_;
   SeqNum        seq_;	// Tuple sequence number
-  timeCBHandle* tcb_;	// Used to cancel retransmit timer
+  EventLoop::TimerID tcb_;	// Used to cancel retransmit timer
   bool          wnd_;	// If true then window updated on timeout.
 };
 
@@ -91,7 +91,7 @@ int CCT::push(int port, TuplePtr tp, b_cbv cb)
   if ((*tp)[1]->typeCode() == Value::STR && Val_Str::cast((*tp)[1]) == "ACK") {
     // Acknowledge tuple and update measurements.
     ValuePtr dest = (*tp)[DEST+2];			// Destination address
-    SeqNum   seq  = Val_UInt64::cast((*tp)[SEQ+2]);	// Sequence number
+    SeqNum   seq  = Val_Int64::cast((*tp)[SEQ+2]);	// Sequence number
     dealloc(dest, seq);
     successTransmit();
   }
@@ -109,7 +109,7 @@ TuplePtr CCT::pull(int port, b_cbv cb)
 
   if (current_window() < max_window() && 
       (data_on_ = (tp = input(0)->pull(boost::bind(&CCT::data_ready, this))) != NULL)) {
-    SeqNum   seq  = Val_UInt64::cast((*tp)[SEQ]);
+    SeqNum   seq  = Val_Int64::cast((*tp)[SEQ]);
     ValuePtr dest = (*tp)[DEST];
     double   rtt  = Val_Double::cast((*tp)[RTT]);
 
@@ -133,8 +133,8 @@ void CCT::map(CCTuple *otp, double rtt)
   m->insert(std::make_pair(otp->seq_, otp));
 
   otp->tcb_ =
-    delayCB((0.0 + rtt) / 1000.0,
-            boost::bind(&CCT::timeout_cb, this, otp), this); 
+    EventLoop::loop()->enqueue_timer((0.0 + rtt) / 1000.0,
+				     boost::bind(&CCT::timeout_cb, this, otp));
 }
 
 void CCT::dealloc(ValuePtr dest, SeqNum seq)
@@ -145,8 +145,8 @@ void CCT::dealloc(ValuePtr dest, SeqNum seq)
     if (record_iter != iter->second->end()) {
       CCTuple *record = record_iter->second;
 
-      if (record->tcb_ != NULL) {
-        timeCBRemove(record->tcb_);
+      if (record->tcb_ != 0) {
+        EventLoop::loop()->cancel_timer(record->tcb_);
       }
 
       delete record;
@@ -188,7 +188,7 @@ void CCT::timeout_cb(CCTuple *otp)
       for_each(i->second->begin(), i->second->end(), CCTuple());
     }
   }
-  otp->tcb_ = NULL;
+  otp->tcb_ = 0;
   dealloc(otp->dest_, otp->seq_);
 }
 

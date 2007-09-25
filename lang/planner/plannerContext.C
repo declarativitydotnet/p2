@@ -387,7 +387,7 @@ namespace compile {
       for (unsigned pos = 0; true; pos++) {
         TuplePtr lookup = Tuple::mk();
         lookup->append((*rule)[TUPLE_ID]);
-        lookup->append(Val_UInt32::mk(pos));
+        lookup->append(Val_Int64::mk(pos));
         lookup->freeze();
 
         TuplePtr lookup2 = Tuple::mk();

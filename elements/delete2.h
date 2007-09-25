@@ -22,47 +22,30 @@
 #include "element.h"
 #include "elementRegistry.h"
 #include "commonTable.h"
-#include "commitManager.h"
-
+#include "eventLoop.h"
 
 class Delete2 : public Element {
 public:
   Delete2(string name, CommonTablePtr table);
   Delete2(TuplePtr);
   
-  const char*
-  class_name() const {return "Delete2";}
+  const char* class_name() const {return "Delete2";}
+  const char* processing() const {return "h/";}
+  const char* flow_code() const {return "-/";}
 
-
-  const char*
-  processing() const {return "h/";}
-
-
-  const char*
-  flow_code() const {return "-/";}
-
-  
   /** Delete2 a pushed element */
-  int
-  push(int port, TuplePtr, b_cbv cb);
+  virtual int push(int port, TuplePtr, b_cbv cb);
 
   DECLARE_PUBLIC_ELEMENT_INITS
 
 private:
-  int initialize();
 
-  class Action : public CommitManager::Action {
-    public:
-      Action(CommonTablePtr);
+  EventLoop::Closure	_action_cl;
+  bool			_action_queued;
+  void			_action();
 
-    private:
-      void commit();
-      void abort();
-
-      CommonTablePtr _table;
-  };
-
-  CommitManager::ActionPtr _action;
+  CommonTablePtr	_table;
+  TupleSet		_buffer;
 
   DECLARE_PRIVATE_ELEMENT_INITS
 };

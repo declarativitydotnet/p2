@@ -15,7 +15,9 @@
 
 lib_LTLIBRARIES =	libp2core.la
 
-SOURCE_FILE_ROOTS =	reporting \
+SOURCE_FILE_ROOTS =	eventLoop \
+			p2net \
+			reporting \
 			tableManager \
 			commonTable \
 			compileUtil \
@@ -34,10 +36,7 @@ SOURCE_FILE_ROOTS =	reporting \
 			pel_lexer \
 			pel_vm \
 			val_null \
-			val_int32 \
-			val_uint32 \
 			val_int64 \
-			val_uint64 \
 			val_double \
 			val_opaque \
 			val_tuple \
@@ -52,10 +51,7 @@ SOURCE_FILE_ROOTS =	reporting \
 			val_vector \
 			CSVlex \
 			val_matrix \
-			loop \
-			scheduler \
-			p2Time \
-			commitManager
+			p2Time
 
 
 libp2core_la_SOURCES =	$(SOURCE_FILE_ROOTS:=.h) $(SOURCE_FILE_ROOTS:=.C) \
@@ -63,9 +59,7 @@ libp2core_la_SOURCES =	$(SOURCE_FILE_ROOTS:=.h) $(SOURCE_FILE_ROOTS:=.C) \
 			pel_lexer.lex \
 			pel_gen.py \
 			pel_program.h \
-			systemTable.h \
-			iStateful.h \
-			iRunnable.h			
+			systemTable.h 
 
 
 libp2core_la_LDFLAGS =	@BOOST_LIB@ \

@@ -16,7 +16,6 @@
 
 #include "parser_util.h"
 #include "ol_context.h"
-#include "val_int32.h"
 #include "oper.h"
 
 using namespace opr;

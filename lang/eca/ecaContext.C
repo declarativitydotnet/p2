@@ -17,8 +17,7 @@
 #include "value.h"
 #include "val_str.h"
 #include "val_null.h"
-#include "val_uint32.h"
-#include "val_int32.h"
+#include "val_int64.h"
 #include "val_list.h"
 #include "val_tuple.h"
 namespace compile {
@@ -95,7 +94,7 @@ namespace compile {
           ecaEvent->set(functorEcaPos, Val_Str::mk("RECV"));
         }
         /* Make sure the event appears in position 1 of the rule. */
-        ecaEvent->set(functorPosPos, Val_UInt32::mk(1));
+        ecaEvent->set(functorPosPos, Val_Int64::mk(1));
         ecaEvent->freeze();
         functorTbl->insert(ecaEvent); // Commit the updated event functor
       
@@ -105,7 +104,7 @@ namespace compile {
              SEND. */
           ecaHead->set(functorEcaPos, Val_Str::mk("SEND"));
         }
-        else if ((*rule)[catalog->attribute(RULE, "DELETE")] == Val_UInt32::mk(1)) {
+        else if ((*rule)[catalog->attribute(RULE, "DELETE")] == Val_Int64::mk(1)) {
           /* The rule contains a deletion marker, so the functor ECA type
              is DELETE. Should we ensure that the head references a local table!! */
           ecaHead->set(functorEcaPos, Val_Str::mk("DELETE"));
@@ -117,7 +116,7 @@ namespace compile {
         }
 
         /* Ensure the head appears in position 0. */
-        ecaHead->set(functorPosPos, Val_UInt32::mk(0));
+        ecaHead->set(functorPosPos, Val_Int64::mk(0));
         functorTbl->insert(ecaHead); // Commit changes.
       
         /** Set all table predicates to ECA type PROBE. Also set
@@ -127,7 +126,7 @@ namespace compile {
              iter != probes.end(); iter++) {
           TuplePtr tp = (*iter)->clone();
           tp->set(functorEcaPos, Val_Str::mk("PROBE"));
-          tp->set(functorPosPos, Val_UInt32::mk(position++));
+          tp->set(functorPosPos, Val_Int64::mk(position++));
           functorTbl->insert(tp);
         }
 
@@ -138,7 +137,7 @@ namespace compile {
         Iter = catalog->table(SELECT)->lookup(CommonTable::theKey(CommonTable::KEY2), key, rule); 
         while (!Iter->done()) {
           TuplePtr select = Iter->next()->clone();
-          select->set(catalog->attribute(SELECT, "POSITION"), Val_UInt32::mk(position++));
+          select->set(catalog->attribute(SELECT, "POSITION"), Val_Int64::mk(position++));
           select->freeze();
           if (!catalog->table(SELECT)->insert(select))
             throw Exception("Rewrite View: Can't insert selection. " + rule->toString());
@@ -149,7 +148,7 @@ namespace compile {
 	Iter = catalog->table(ASSIGN)->lookup(CommonTable::theKey(CommonTable::KEY2), key, rule); 
         while (!Iter->done()) {
           TuplePtr assign = Iter->next()->clone();
-          assign->set(catalog->attribute(ASSIGN, "POSITION"), Val_UInt32::mk(position++));
+          assign->set(catalog->attribute(ASSIGN, "POSITION"), Val_Int64::mk(position++));
           assign->freeze();
           if (!catalog->table(ASSIGN)->insert(assign))
             throw Exception("Rewrite View: Can't insert assignment. " + rule->toString());
@@ -182,11 +181,11 @@ namespace compile {
 
         if ((*deltaHead)[catalog->attribute(FUNCTOR, "TID")] == Val_Null::mk())
           deltaHead->set(catalog->attribute(FUNCTOR, "ECA"), Val_Str::mk("SEND"));
-        else if ((*rule)[catalog->attribute(RULE, "DELETE")] == Val_Int32::mk(1))
+        else if ((*rule)[catalog->attribute(RULE, "DELETE")] == Val_Int64::mk(1))
           deltaHead->set(catalog->attribute(FUNCTOR, "ECA"), Val_Str::mk("DELETE"));
         else
           deltaHead->set(catalog->attribute(FUNCTOR, "ECA"), Val_Str::mk("ADD"));
-        deltaHead->set(catalog->attribute(FUNCTOR, "POSITION"), Val_UInt32::mk(0));
+        deltaHead->set(catalog->attribute(FUNCTOR, "POSITION"), Val_Int64::mk(0));
 
         deltaRule->freeze();
         deltaHead->freeze();
@@ -199,7 +198,7 @@ namespace compile {
         TuplePtr deltaEvent = (*iter1)->clone(FUNCTOR, true);
         deltaEvent->set(catalog->attribute(FUNCTOR, "ECA"), Val_Str::mk("DELTA"));
         deltaEvent->set(catalog->attribute(FUNCTOR, "RID"), (*deltaRule)[TUPLE_ID]);
-        deltaEvent->set(catalog->attribute(FUNCTOR, "POSITION"), Val_UInt32::mk(1));
+        deltaEvent->set(catalog->attribute(FUNCTOR, "POSITION"), Val_Int64::mk(1));
         deltaEvent->freeze();
         if (!catalog->table(FUNCTOR)->insert(deltaEvent))
           throw Exception("Rewrite View: Can't insert delta event. " + rule->toString());
@@ -212,7 +211,7 @@ namespace compile {
             TuplePtr deltaProbe = (*iter2)->clone(FUNCTOR, true);
             deltaProbe->set(catalog->attribute(FUNCTOR, "ECA"), Val_Str::mk("PROBE"));
             deltaProbe->set(catalog->attribute(FUNCTOR, "RID"), (*deltaRule)[TUPLE_ID]);
-            deltaProbe->set(catalog->attribute(FUNCTOR, "POSITION"), Val_UInt32::mk(position++));
+            deltaProbe->set(catalog->attribute(FUNCTOR, "POSITION"), Val_Int64::mk(position++));
             deltaProbe->freeze();
             if (!catalog->table(FUNCTOR)->insert(deltaProbe))
               throw Exception("Rewrite View: Can't insert probe. " + rule->toString());
@@ -228,7 +227,7 @@ namespace compile {
         while (!Iter->done()) {
           TuplePtr select = Iter->next()->clone(SELECT, true);
           select->set(catalog->attribute(SELECT, "RID"), (*deltaRule)[TUPLE_ID]);
-          select->set(catalog->attribute(SELECT, "POSITION"), Val_UInt32::mk(position++));
+          select->set(catalog->attribute(SELECT, "POSITION"), Val_Int64::mk(position++));
           select->freeze();
           if (!catalog->table(SELECT)->insert(select))
             throw Exception("Rewrite View: Can't insert selection. " + rule->toString());
@@ -242,7 +241,7 @@ namespace compile {
         while (!Iter->done()) {
           TuplePtr assign = Iter->next()->clone(ASSIGN, true);
           assign->set(catalog->attribute(ASSIGN, "RID"), (*deltaRule)[TUPLE_ID]);
-          assign->set(catalog->attribute(ASSIGN, "POSITION"), Val_UInt32::mk(position++));
+          assign->set(catalog->attribute(ASSIGN, "POSITION"), Val_Int64::mk(position++));
           assign->freeze();
           if (!catalog->table(ASSIGN)->insert(assign))
             throw Exception("Rewrite View: Can't insert assignment. " + rule->toString());
@@ -290,15 +289,15 @@ namespace compile {
       triggerRule->append(Val_Str::mk(string("periodicTrigger_") + ruleName)); // Rule name
       triggerRule->append((*head)[TUPLE_ID]);                        // Head tuple identifier
       triggerRule->append(Val_Null::mk());                           // P2DL text for this rule
-      triggerRule->append(Val_UInt32::mk(0));                        // Not delete rule
-      triggerRule->append(Val_UInt32::mk(2));                        // Rule contains head and event.
+      triggerRule->append(Val_Int64::mk(0));                        // Not delete rule
+      triggerRule->append(Val_Int64::mk(2));                        // Rule contains head and event.
       triggerRule->freeze();
       ruleTbl->insert(triggerRule);
 
       /** Point the periodic event tuple to the new trigger rule tuple */
       periodic->set(functorRidPos, (*triggerRule)[TUPLE_ID]); // Point periodic to new rule
       periodic->set(functorEcaPos, Val_Str::mk("INSERT"));    // Periodic ECA type
-      periodic->set(functorPosPos, Val_UInt32::mk(1));        // Periodic Position
+      periodic->set(functorPosPos, Val_Int64::mk(1));        // Periodic Position
   
       /** Create the trigger rule head tuple */
       head->append((*triggerRule)[TUPLE_ID]); // The "trigger" rule identifier
@@ -306,7 +305,7 @@ namespace compile {
       head->append(Val_Null::mk());           // Reference table (event -> none)
       head->append(Val_Str::mk("SEND"));      // ECA action type
       head->append(Val_List::mk(schema));     // Attributes
-      head->append(Val_UInt32::mk(0));        // Position
+      head->append(Val_Int64::mk(0));        // Position
       head->append(Val_Null::mk());           // Access method
       head->freeze();
       functorTbl->insert(head);
@@ -317,7 +316,7 @@ namespace compile {
       event->append(Val_Null::mk());           // Reference table (event -> none)
       event->append(Val_Str::mk("RECV"));      // ECA event type
       event->append(Val_List::mk(schema));     // Attributes
-      event->append(Val_UInt32::mk(1));        // Position
+      event->append(Val_Int64::mk(1));        // Position
       event->append(Val_Null::mk());           // Access method
       event->freeze();
       functorTbl->insert(event);

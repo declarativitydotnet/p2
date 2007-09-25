@@ -41,7 +41,7 @@
 #include "slot.h"
 #include "val_str.h"
 #include "val_tuple.h"
-#include "val_uint64.h"
+#include "val_int64.h"
 #include "demux.h"
 #include "roundRobin.h"
 #include "marshalField.h"
@@ -52,8 +52,6 @@
 void
 sendMessages(std::string udpAddress)
 {
-  eventLoopInitialize();
-
   // The sending data flow
   PlumberPtr plumber(new Plumber());
   Plumber::DataflowPtr conf(new Plumber::Dataflow("test"));
@@ -104,7 +102,7 @@ sendMessages(std::string udpAddress)
   }
 
   // Run the plumber
-  eventLoop();
+  EventLoop::loop()->start();
 }
 
 

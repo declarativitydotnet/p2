@@ -12,12 +12,14 @@
  */
 
 #include "plsensor.h"
+
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include "val_str.h"
+#include "p2net.h"
 
 //
 // This regexp matches an HTTP response.  Various groups are of
@@ -76,13 +78,13 @@ void PlSensor::enter_waiting()
 {
   TRACE_FUNCTION;
   if (sd >= 0) { 
-    removeFileDescriptorCB(sd, b_selread);
-    removeFileDescriptorCB(sd, b_selwrite);
+    EventLoop::loop()->del_read_fcb(sd);
+    EventLoop::loop()->del_write_fcb(sd);
     close(sd);
     sd = -1;
   }
   state = ST_WAITING;
-  wait_delaycb = delayCB(delay, boost::bind(&PlSensor::enter_connecting,this), this);
+  wait_delaycb = EventLoop::loop()->enqueue_timer(delay, boost::bind(&PlSensor::enter_connecting,this));
 }
 
 //
@@ -98,7 +100,8 @@ void PlSensor::enter_connecting()
   hdrs.clear();
   req_buf.clear();
   req_buf << reqtmpl.str();
-  tc = tcpConnect(localaddr, port, boost::bind(&PlSensor::connect_cb,this,_1));
+  P2Net::tcpConnect(localaddr.s_addr, port,
+		    boost::bind(&PlSensor::connect_cb,this,_1));
 }
 
 //
@@ -115,7 +118,7 @@ void PlSensor::connect_cb(int fd)
     // Enter SENDING
     TRACE_WORDY << "socket descriptor is " << sd << "\n";
     state = ST_SENDING;
-    fileDescriptorCB(sd, b_selwrite, boost::bind(&PlSensor::write_cb,this), this);
+    EventLoop::loop()->add_write_fcb(sd, boost::bind(&PlSensor::write_cb,this));
   }
 }
 
@@ -139,9 +142,9 @@ void PlSensor::write_cb()
   // Falls through to here when the sending is done...
   if (req_buf.length() == 0) {
     // Enter RX_HEADERS state
-    removeFileDescriptorCB(sd, b_selwrite);
+    EventLoop::loop()->del_write_fcb(sd);
     state = ST_RX_HEADERS;
-    fileDescriptorCB(sd, b_selread, boost::bind(&PlSensor::rx_hdr_cb,this), this);
+    EventLoop::loop()->add_read_fcb(sd, boost::bind(&PlSensor::rx_hdr_cb,this));
   }
 }
 

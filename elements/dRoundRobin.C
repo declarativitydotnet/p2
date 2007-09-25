@@ -13,10 +13,11 @@
  */
 
 #include "dRoundRobin.h"
+
+#include "eventLoop.h"
 #include "val_str.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include <boost/bind.hpp>
-#include "loop.h"
 
 DEFINE_ELEMENT_INITS(DRoundRobin, "DRoundRobin");
 
@@ -36,10 +37,10 @@ DRoundRobin::DRoundRobin(string name,
  * Generic constructor.
  * Arguments:
  * 2. Val_Str:    Element Name.
- * 3. Val_UInt32: Number of inputs.
+ * 3. Val_Int64: Number of inputs.
  */
 DRoundRobin::DRoundRobin(TuplePtr args)
-  : Element(Val_Str::cast((*args)[2]), Val_UInt32::cast((*args)[3]), 1),
+  : Element(Val_Str::cast((*args)[2]), Val_Int64::cast((*args)[3]), 1),
     _pull_cb(0),
     _block_flags(),
     _block_flag_count(0),
@@ -136,7 +137,7 @@ unsigned DRoundRobin::add_input()
     _block_flags[port] = true;
   }
   _block_flag_count++;
-  delayCB(1, boost::bind(&DRoundRobin::unblock, this, port), this);
+  EventLoop::loop()->enqueue_timer(1, boost::bind(&DRoundRobin::unblock, this, port));
 
   return port;
 }

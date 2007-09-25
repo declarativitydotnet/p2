@@ -24,50 +24,31 @@
 #include "element.h"
 #include "elementRegistry.h"
 #include "commonTable.h"
-#include "commitManager.h"
-
-#include <list>
+#include "eventLoop.h"
 
 class Insert2 : public Element {
 public:
   Insert2(string name, CommonTablePtr table);
-
   Insert2(TuplePtr);
 
-  const char*
-  class_name() const {return "Insert2";}
-
-
-  const char*
-  processing() const {return "h/";}
-
-
-  const char*
-  flow_code() const {return "-/";}
-  
+  const char* class_name() const {return "Insert2";}
+  const char* processing() const {return "h/";}
+  const char* flow_code() const {return "-/";}
 
   /** If inserted tuple is new, push it into the output. If not, leave
       the output untouched. */
-  virtual int
-  push(int port, TuplePtr, b_cbv cb);
-  
+  virtual int push(int port, TuplePtr, b_cbv cb);
 
   DECLARE_PUBLIC_ELEMENT_INITS
 
 private:
-  int initialize();
 
-  class Action : public CommitManager::Action {
-    public:
-      Action(CommonTablePtr);
-    private:
-      void commit();
-      void abort();
+  EventLoop::Closure	_action_cl;
+  bool			_action_queued;
+  void			_action();
 
-      CommonTablePtr _table;
-  };
-
-  CommitManager::ActionPtr _action;
+  CommonTablePtr	_table;
+  TupleSet		_buffer;
 
   DECLARE_PRIVATE_ELEMENT_INITS
 };

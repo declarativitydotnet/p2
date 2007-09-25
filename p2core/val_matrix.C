@@ -11,7 +11,6 @@
 
 #include "val_null.h"
 #include "val_matrix.h"
-#include "val_uint32.h"
 
 class OperMatrix : public opr::OperCompare<Val_Matrix> {
 };

@@ -17,7 +17,7 @@
 #include "val_opaque.h"
 #include "xdrbuf.h"
 #include "val_str.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "val_list.h"
 
 DEFINE_ELEMENT_INITS(MarshalField, "MarshalField");
@@ -38,7 +38,7 @@ MarshalField::MarshalField(string name, std::vector<unsigned> fieldNos)
  * Generic constructor.
  * Arguments:
  * 2. Val_Str:    Element Name.
- * 3. Val_UInt32: The field number to be marshalled.
+ * 3. Val_Int64: The field number to be marshalled.
  * OR
  * 3. Val_List:   The field numbers to be marshalled.
  */
@@ -49,10 +49,10 @@ MarshalField::MarshalField(TuplePtr args)
     ListPtr fields = Val_List::cast((*args)[3]);
     for (ValPtrList::const_iterator i = fields->begin();
          i != fields->end(); i++)
-      _fieldNos.push_back(Val_UInt32::cast(*i));
+      _fieldNos.push_back(Val_Int64::cast(*i));
   }
   else {
-    _fieldNos.push_back(Val_UInt32::cast((*args)[3]));
+    _fieldNos.push_back(Val_Int64::cast((*args)[3]));
   }
 }
 

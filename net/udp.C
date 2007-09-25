@@ -21,8 +21,7 @@
 
 #include "val_str.h"
 #include "val_opaque.h"
-#include "val_int32.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 
 
 DEFINE_ELEMENT_INITS(Udp, "Udp")
@@ -172,7 +171,7 @@ Udp::Udp(string name,
     rx(new Udp::Rx(_name + "Rx", *this)),
     tx(new Udp::Tx(_name + "Tx", *this))
 {
-  sd = networkSocket(SOCK_DGRAM, port, addr);
+  sd = P2Net::inetSocket(SOCK_DGRAM, port, addr);
   if (sd < 0) {
     // Couldn't allocate network socket
     throw NetworkException("Couldn't allocate network socket");
@@ -186,13 +185,13 @@ Udp::Udp(TuplePtr args)
     tx(new Udp::Tx(name(), *this))
 {
   if (args->size() > 4) {
-    sd = networkSocket(SOCK_DGRAM, 
-                       Val_UInt32::cast((*args)[3]), 
-                       Val_UInt32::cast((*args)[4]));
+    sd = P2Net::inetSocket(SOCK_DGRAM, 
+			   Val_Int64::cast((*args)[3]), 
+			   Val_Int64::cast((*args)[4]));
   }
   else {
-    sd = networkSocket(SOCK_DGRAM, 
-                       Val_UInt32::cast((*args)[3]), INADDR_ANY); 
+    sd = P2Net::inetSocket(SOCK_DGRAM, 
+			   (in_addr_t)Val_Int64::cast((*args)[3]), INADDR_ANY); 
   }
 
   if (sd < 0) {
@@ -205,14 +204,13 @@ Udp::Udp(TuplePtr args)
 void
 Udp::Rx::socket_on()
 {
-  fileDescriptorCB(u->sd, b_selread,
-                   boost::bind(&Udp::Rx::socket_cb, this), this);
+  EventLoop::loop()->add_read_fcb(u->sd, boost::bind(&Udp::Rx::socket_cb, this));
 }
 
 void
 Udp::Rx::socket_off()
 {
-  removeFileDescriptorCB(u->sd, b_selread);
+  EventLoop::loop()->del_read_fcb(u->sd);
 }
 
 Udp::NetworkException::NetworkException(string msg)

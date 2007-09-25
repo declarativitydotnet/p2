@@ -12,7 +12,7 @@
 #include "traceTuple.h"
 #include "val_tuple.h"
 #include "val_str.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "loggerI.h"
 #include <boost/bind.hpp>
 
@@ -74,7 +74,7 @@ int TraceTuple::push(int port, TuplePtr p, b_cbv cb)
   // append the fields
   for(uint32_t i = 1; i < p->size(); i++)
     t->append((*p)[i]);
-  t->append(Val_UInt32::mk(p->ID()));
+  t->append(Val_Int64::mk(p->ID()));
   t->freeze();
   ELEM_INFO("Produced tuple "
             << t->toString());

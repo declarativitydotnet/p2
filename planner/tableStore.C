@@ -16,9 +16,8 @@
  */
 
 #include "tableStore.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "tuple.h"
-#include "loop.h"
 #include "planner.h"
 
 TableStore::TableStore(OL_Context* ctxt) { 

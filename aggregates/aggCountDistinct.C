@@ -11,46 +11,37 @@
  */
 
 #include "aggCountDistinct.h"
-#include "val_uint64.h"
+#include "val_int64.h"
 #include "aggFactory.h"
 
 AggCountDistinct::AggCountDistinct()
 {
 }
 
-
 AggCountDistinct::~AggCountDistinct()
 {
 }
-
   
 void
 AggCountDistinct::reset()
 {
   _valueSet.clear();
 }
-  
 
-void
-AggCountDistinct::first(ValuePtr v)
-{
-  _valueSet.insert(v);
-}
-  
-
-void
-AggCountDistinct::process(ValuePtr v)
+void AggCountDistinct::first(ValuePtr v)
 {
   _valueSet.insert(v);
 }
 
-
-ValuePtr 
-AggCountDistinct::result()
+void AggCountDistinct::process(ValuePtr v)
 {
-  return Val_UInt64::mk(_valueSet.size());
+  _valueSet.insert(v);
 }
 
+ValuePtr AggCountDistinct::result()
+{
+  return Val_Int64::mk(_valueSet.size());
+}
 
 // This is necessary for the class to register itself with the
 // factory.

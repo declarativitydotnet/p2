@@ -20,7 +20,6 @@
 #include "value.h"
 #include "oper.h"
 #include "fdbuf.h"
-#include "loop.h"
 
 class Val_Opaque : public Value {
 

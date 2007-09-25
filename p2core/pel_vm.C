@@ -28,10 +28,7 @@
 
 #include "plumber.h"
 #include "compileUtil.h"
-#include "val_int32.h"
-#include "val_uint32.h"
 #include "val_int64.h"
-#include "val_uint64.h"
 #include "val_str.h"
 #include "val_double.h"
 #include "val_null.h"
@@ -41,7 +38,6 @@
 #include "val_vector.h"
 #include "val_matrix.h"
 #include "oper.h"
-#include "loop.h"
 
 using namespace opr;
 
@@ -150,16 +146,7 @@ ValuePtr Pel_VM::pop()
 }
 
 //
-// Type conversion to an unsigned number with no checkng
-//
-uint64_t Pel_VM::pop_unsigned() 
-{
-  ValuePtr t = stackTop(); stackPop();
-  return Val_UInt64::cast(t);
-}
-
-//
-// Type conversion to an unsigned number with no checkng
+// Type conversion to a signed number with no checkng
 //
 int64_t Pel_VM::pop_signed() 
 {
@@ -374,7 +361,7 @@ DEF_OP(POP_ALL) {
   }
 }
 DEF_OP(PEEK) {
-  uint stackPosition = pop_unsigned();
+  uint stackPosition = pop_signed();
   if (stackPosition >= _st.size()) {
     error = PE_STACK_UNDERFLOW;
     return;
@@ -386,7 +373,7 @@ DEF_OP(PEEK) {
 DEF_OP(IFELSE) {
   ValuePtr elseVal = stackTop(); stackPop();
   ValuePtr thenVal = stackTop(); stackPop();
-  int64_t ifVal = pop_unsigned();
+  int64_t ifVal = pop_signed();
   if (ifVal) {
     stackPush(thenVal);
   } else {
@@ -395,7 +382,7 @@ DEF_OP(IFELSE) {
 }
 DEF_OP(IFPOP) {
   ValuePtr thenVal = stackTop(); stackPop();
-  int64_t ifVal = pop_unsigned();
+  int64_t ifVal = pop_signed();
   if (ifVal) {
     if (!result) {
       result = Tuple::mk();
@@ -404,7 +391,7 @@ DEF_OP(IFPOP) {
   }
 }
 DEF_OP(IFSTOP) {
-  int64_t ifVal = pop_unsigned();
+  int64_t ifVal = pop_signed();
   if (ifVal) {
     stop();
     //    TELL_WARN << "IF stop of " << ifVal << ".  Stopping!!!\n";
@@ -417,7 +404,7 @@ DEF_OP(DUMPSTACK) {
   dumpStack(s1);
 }
 DEF_OP(IFPOP_TUPLE) {
-  int64_t ifVal = pop_unsigned();
+  int64_t ifVal = pop_signed();
   if (ifVal) {
     if (!result) {
       result = Tuple::mk();
@@ -468,7 +455,7 @@ DEF_OP(T_UNBOXPOP) {
   }
 }
 DEF_OP(T_FIELD) {
-  unsigned field = pop_unsigned();
+  int field = pop_signed();
   ValuePtr tuple = stackTop(); stackPop();
   TuplePtr theTuple = Val_Tuple::cast(tuple);
   ValuePtr value = (*theTuple)[field];
@@ -506,7 +493,7 @@ DEF_OP(H_SHA1) {
 }
 
 DEF_OP(T_IDGEN) { 
-  stackPush(Val_UInt32::mk(Plumber::catalog()->uniqueIdentifier()));
+  stackPush(Val_Int64::mk(Plumber::catalog()->uniqueIdentifier()));
 }
 
 /* MAX and MIN of two value types. */
@@ -560,7 +547,7 @@ DEF_OP(L_POS_ATTR) {
    ValuePtr listVal = stackTop(); stackPop();
    ListPtr  list    = Val_List::cast(listVal);
    
-   stackPush(Val_Int32::mk(compile::namestracker::position(list, var)));
+   stackPush(Val_Int64::mk(compile::namestracker::position(list, var)));
 }
 
 DEF_OP(L_GET_ATTR) { 
@@ -568,8 +555,8 @@ DEF_OP(L_GET_ATTR) {
    ValuePtr listVal = stackTop(); stackPop();
    ListPtr  list    = Val_List::cast(listVal);
    
-   if (attr->typeCode() == Value::INT32) {
-     int position = Val_Int32::cast(attr);
+   if (attr->typeCode() == Value::INT64) {
+     int position = Val_Int64::cast(attr);
      for (ValPtrList::const_iterator iter = list->begin();
           iter != list->end(); iter++) {
        if (!position--) {
@@ -595,7 +582,7 @@ DEF_OP(L_AGG_ATTR) {
    ValuePtr listVal = stackTop(); stackPop();
    ListPtr  list    = Val_List::cast(listVal);
    
-   stackPush(Val_Int32::mk(compile::namestracker::aggregation(list)));
+   stackPush(Val_Int64::mk(compile::namestracker::aggregation(list)));
 }
 
 DEF_OP(L_CONCAT) {
@@ -626,7 +613,7 @@ DEF_OP(L_MEMBER) {
    ListPtr list = Val_List::cast(listVal);
    
    int isMember = list->member(value);
-   stackPush(Val_Int32::mk(isMember));
+   stackPush(Val_Int64::mk(isMember));
 }
 
 DEF_OP(L_INTERSECT) {
@@ -649,13 +636,13 @@ DEF_OP(L_MULTISET_INTERSECT) {
 
 // Vector operations
 DEF_OP(V_INITVEC) {
-  uint64_t sz = pop_unsigned();
+  uint64_t sz = pop_signed();
   ValuePtr vector = Val_Vector::mk2(sz);
   stackPush(vector);
 }
 
 DEF_OP(V_GETOFFSET) {
-   int64_t offset = pop_unsigned();
+   int64_t offset = pop_signed();
    ValuePtr val1 = stackTop(); stackPop();
    VectorPtr v1 = Val_Vector::cast(val1);
    stackPush((*v1)[offset]);
@@ -664,7 +651,7 @@ DEF_OP(V_GETOFFSET) {
 
 DEF_OP(V_SETOFFSET) {
    ValuePtr val1 = stackTop(); stackPop();
-   int64_t offset = pop_unsigned();
+   int64_t offset = pop_signed();
    ValuePtr val2 = stackTop(); stackPop();
    VectorPtr v2 = Val_Vector::cast(val2);
    (*v2)[offset] = val1;
@@ -676,20 +663,20 @@ DEF_OP(V_COMPAREVEC) {
   ValuePtr val2 = stackTop(); stackPop();
   VectorPtr v2 = Val_Vector::cast(val2);
   Val_Vector vec2(v2);
-  stackPush(Val_Int32::mk(vec2.compareTo(val1)));
+  stackPush(Val_Int64::mk(vec2.compareTo(val1)));
 }
 
 // Matrix operations
 DEF_OP(M_INITMAT) {
-  uint64_t sz2 = pop_unsigned();
-  uint64_t sz1 = pop_unsigned();
+  uint64_t sz2 = pop_signed();
+  uint64_t sz1 = pop_signed();
   ValuePtr matrix = Val_Matrix::mk2(sz1,sz2);
   stackPush(matrix);
 }
 
 DEF_OP(M_GETOFFSET) {
-   int64_t offset1 = pop_unsigned();
-   int64_t offset2 = pop_unsigned();
+   int64_t offset1 = pop_signed();
+   int64_t offset2 = pop_signed();
    ValuePtr val1 = stackTop(); stackPop();
    MatrixPtr m1 = Val_Matrix::cast(val1);
    stackPush((*m1)(offset1,offset2));
@@ -698,8 +685,8 @@ DEF_OP(M_GETOFFSET) {
 
 DEF_OP(M_SETOFFSET) {
    ValuePtr val1 = stackTop(); stackPop();
-   int64_t offset1 = pop_unsigned();
-   int64_t offset2 = pop_unsigned();
+   int64_t offset1 = pop_signed();
+   int64_t offset2 = pop_signed();
    ValuePtr val2 = stackTop(); stackPop();
    MatrixPtr mat = Val_Matrix::cast(val2);
    (*mat)(offset1,offset2) = val1;
@@ -711,35 +698,35 @@ DEF_OP(M_COMPAREMAT) {
   ValuePtr val2 = stackTop(); stackPop();
   MatrixPtr m2 = Val_Matrix::cast(val2);
   Val_Matrix mat2(m2);
-  stackPush(Val_Int32::mk(mat2.compareTo(val1)));
+  stackPush(Val_Int64::mk(mat2.compareTo(val1)));
 }
 
 //
 // Boolean operations
 //
 DEF_OP(NOT) {
-  u_int64_t v = pop_unsigned();
+  int64_t v = pop_signed();
   //  TELL_WARN << "NOT of " << v << " is " << !v << "\n";
-  stackPush(Val_Int32::mk(!v));
+  stackPush(Val_Int64::mk(!v));
 }
 DEF_OP(AND) {
-  u_int64_t v2 = pop_unsigned();
-  u_int64_t v1 = pop_unsigned();
-  stackPush(Val_Int32::mk(v1 && v2));
+  int64_t v2 = pop_signed();
+  int64_t v1 = pop_signed();
+  stackPush(Val_Int64::mk(v1 && v2));
 }
 DEF_OP(OR) {
-  u_int64_t v2 = pop_unsigned();
-  u_int64_t v1 = pop_unsigned();
-  stackPush(Val_Int32::mk(v1 || v2));
+  int64_t v2 = pop_signed();
+  int64_t v1 = pop_signed();
+  stackPush(Val_Int64::mk(v1 || v2));
 }
 DEF_OP(RAND) {
   int32_t r = random();
-  stackPush(Val_Int32::mk(r));
+  stackPush(Val_Int64::mk(r));
 }
 DEF_OP(COIN) {
   double r = double(random()) / double(RAND_MAX);
   double p = pop_double();
-  stackPush(Val_Int32::mk(r <= p));
+  stackPush(Val_Int64::mk(r <= p));
 }
 
 DEF_OP(L_INIT) {
@@ -816,7 +803,7 @@ DEF_OP(L_CONTAINS) {
     error = PE_BAD_LIST_FIELD;
     return;
   }
-  stackPush(Val_Int32::mk(list->member(second)));
+  stackPush(Val_Int64::mk(list->member(second)));
 }
 
 DEF_OP(L_REMOVELAST) {
@@ -861,7 +848,7 @@ DEF_OP(L_SIZE) {
     return;
   }
 
-  stackPush(Val_Int32::mk(list->size()));
+  stackPush(Val_Int64::mk(list->size()));
 }
 
 //
@@ -933,7 +920,7 @@ DEF_OP(DIV) {
   // Be careful of undefined evaluation order in C++!
   ValuePtr v1 = pop();
   ValuePtr v2 = pop();
-  if (v1 != Val_UInt64::mk(0)) { 
+  if (v1 != Val_Int64::mk(0)) { 
     try {
       stackPush((v2 / v1));
     } catch (opr::Oper::DivisionByZeroException e) {
@@ -947,7 +934,7 @@ DEF_OP(MOD) {
   // Be careful of undefined evaluation order in C++!
   ValuePtr v1 = pop();
   ValuePtr v2 = pop();
-  if (v1 != Val_UInt64::mk(0)) { 
+  if (v1 != Val_Int64::mk(0)) { 
     stackPush((v2 % v1));
   } else if (error == PE_SUCCESS) {
     error = PE_DIVIDE_BY_ZERO;
@@ -961,32 +948,32 @@ DEF_OP(MOD) {
 DEF_OP(TOTALCOMP) { 
   ValuePtr v1 = pop();
   ValuePtr v2 = pop();
-  stackPush(Val_Int32::mk(v1->compareTo(v2)));
+  stackPush(Val_Int64::mk(v1->compareTo(v2)));
 }
 DEF_OP(EQ) {
   ValuePtr v1 = pop();
   ValuePtr v2 = pop();
-  stackPush(Val_Int32::mk(v2 == v1));
+  stackPush(Val_Int64::mk(v2 == v1));
 }
 DEF_OP(LT) { 
   ValuePtr v1 = pop();
   ValuePtr v2 = pop();
-  stackPush(Val_Int32::mk(v2 > v1)); 
+  stackPush(Val_Int64::mk(v2 > v1)); 
 }
 DEF_OP(LTE) { 
   ValuePtr v1 = pop();
   ValuePtr v2 = pop();
-  stackPush(Val_Int32::mk(v2 >= v1)); 
+  stackPush(Val_Int64::mk(v2 >= v1)); 
 }
 DEF_OP(GT) { 
   ValuePtr v1 = pop();
   ValuePtr v2 = pop();
-  stackPush(Val_Int32::mk(v2 < v1)); 
+  stackPush(Val_Int64::mk(v2 < v1)); 
 }
 DEF_OP(GTE) { 
   ValuePtr v1 = pop();
   ValuePtr v2 = pop();
-  stackPush(Val_Int32::mk(v2 <= v1)); 
+  stackPush(Val_Int64::mk(v2 <= v1)); 
 }
 
 //
@@ -996,25 +983,25 @@ DEF_OP(INOO) {
   ValuePtr to   = pop();
   ValuePtr from = pop();
   ValuePtr key  = pop();
-  stackPush(Val_Int32::mk(inOO(key, from, to)));
+  stackPush(Val_Int64::mk(inOO(key, from, to)));
 }
 DEF_OP(INOC) {
   ValuePtr to   = pop();
   ValuePtr from = pop();
   ValuePtr key  = pop();
-  stackPush(Val_Int32::mk(inOC(key, from, to)));
+  stackPush(Val_Int64::mk(inOC(key, from, to)));
 }
 DEF_OP(INCO) {
   ValuePtr to   = pop();
   ValuePtr from = pop();
   ValuePtr key  = pop();
-  stackPush(Val_Int32::mk(inCO(key, from, to)));
+  stackPush(Val_Int64::mk(inCO(key, from, to)));
 }
 DEF_OP(INCC) {
   ValuePtr to   = pop();
   ValuePtr from = pop();
   ValuePtr key  = pop();
-  stackPush(Val_Int32::mk(inCC(key, from, to)));
+  stackPush(Val_Int64::mk(inCC(key, from, to)));
 }
 
 //
@@ -1024,31 +1011,31 @@ DEF_OP(INCC) {
 DEF_OP(TIME_LT) { 
   boost::posix_time::ptime s1 = pop_time();
   boost::posix_time::ptime s2 = pop_time();
-  stackPush(Val_Int32::mk(s2 < s1));
+  stackPush(Val_Int64::mk(s2 < s1));
 }
 DEF_OP(TIME_LTE) { 
   boost::posix_time::ptime s1 = pop_time();
   boost::posix_time::ptime s2 = pop_time();
-  stackPush(Val_Int32::mk(s2 <= s1));
+  stackPush(Val_Int64::mk(s2 <= s1));
 }
 DEF_OP(TIME_GT) { 
   boost::posix_time::ptime s1 = pop_time();
   boost::posix_time::ptime s2 = pop_time();
-  stackPush(Val_Int32::mk(s2 > s1));
+  stackPush(Val_Int64::mk(s2 > s1));
 }
 DEF_OP(TIME_GTE) { 
   boost::posix_time::ptime s1 = pop_time();
   boost::posix_time::ptime s2 = pop_time();
-  stackPush(Val_Int32::mk(s2 >= s1));
+  stackPush(Val_Int64::mk(s2 >= s1));
 }
 DEF_OP(TIME_EQ) { 
   boost::posix_time::ptime s1 = pop_time();
   boost::posix_time::ptime s2 = pop_time();
-  stackPush(Val_Int32::mk(s2 == s1));
+  stackPush(Val_Int64::mk(s2 == s1));
 }
 DEF_OP(TIME_NOW) { 
-  boost::posix_time::ptime t;
-  getTime(t);
+  boost::posix_time::ptime t =
+    boost::posix_time::microsec_clock::universal_time();
   stackPush(Val_Time::mk(t));
 }
 DEF_OP(TIME_MINUS) {
@@ -1066,27 +1053,27 @@ DEF_OP(TIME_MINUS) {
 DEF_OP(TIME_DURATION_LT) { 
   boost::posix_time::time_duration s1 = pop_time_duration();
   boost::posix_time::time_duration s2 = pop_time_duration();
-  stackPush(Val_Int32::mk(s2 < s1));
+  stackPush(Val_Int64::mk(s2 < s1));
 }
 DEF_OP(TIME_DURATION_LTE) { 
   boost::posix_time::time_duration s1 = pop_time_duration();
   boost::posix_time::time_duration s2 = pop_time_duration();
-  stackPush(Val_Int32::mk(s2 <= s1));
+  stackPush(Val_Int64::mk(s2 <= s1));
 }
 DEF_OP(TIME_DURATION_GT) { 
   boost::posix_time::time_duration s1 = pop_time_duration();
   boost::posix_time::time_duration s2 = pop_time_duration();
-  stackPush(Val_Int32::mk(s2 > s1));
+  stackPush(Val_Int64::mk(s2 > s1));
 }
 DEF_OP(TIME_DURATION_GTE) { 
   boost::posix_time::time_duration s1 = pop_time_duration();
   boost::posix_time::time_duration s2 = pop_time_duration();
-  stackPush(Val_Int32::mk(s2 >= s1));
+  stackPush(Val_Int64::mk(s2 >= s1));
 }
 DEF_OP(TIME_DURATION_EQ) { 
   boost::posix_time::time_duration s1 = pop_time_duration();
   boost::posix_time::time_duration s2 = pop_time_duration();
-  stackPush(Val_Int32::mk(s2 == s1));
+  stackPush(Val_Int64::mk(s2 == s1));
 }
 DEF_OP(TIME_DURATION_PLUS) {
    stackPush(Val_Time_Duration::mk(pop_time_duration()+pop_time_duration()));
@@ -1109,7 +1096,7 @@ DEF_OP(STR_CAT) {
   stackPush(Val_Str::mk(r));
 }
 DEF_OP(STR_LEN) {
-  stackPush(Val_UInt32::mk(pop_string().length()));
+  stackPush(Val_Int64::mk(pop_string().length()));
 }
 DEF_OP(STR_UPPER) {
   std::locale  loc_c("C");
@@ -1130,8 +1117,8 @@ DEF_OP(STR_LOWER) {
   stackPush(Val_Str::mk(result));
 }
 DEF_OP(STR_SUBSTR) {
-  uint len = pop_unsigned();
-  uint pos = pop_unsigned();
+  int len = pop_signed();
+  int pos = pop_signed();
   string s = pop_string();
 
   // Sanity check parameters
@@ -1153,9 +1140,9 @@ DEF_OP(STR_MATCH) {
   boost::regex re(pop_string());
   boost::smatch what;
   if (boost::regex_match(pop_string(),what,re)) {
-    stackPush(Val_Int32::mk(true));
+    stackPush(Val_Int64::mk(true));
   } else {
-    stackPush(Val_Int32::mk(false));
+    stackPush(Val_Int64::mk(false));
   }
 }
 DEF_OP(STR_CONV) {
@@ -1191,17 +1178,8 @@ DEF_OP(DBL_CEIL) {
 //
 // Explicit Type conversions
 //
-DEF_OP(CONV_I32) {
-  stackPush(Val_Int32::mk(pop_signed()));
-}
-DEF_OP(CONV_U32) {
-  stackPush(Val_UInt32::mk(pop_unsigned()));
-}  
 DEF_OP(CONV_I64) {
   stackPush(Val_Int64::mk(pop_signed()));
-}
-DEF_OP(CONV_U64) {
-  stackPush(Val_UInt64::mk(pop_unsigned()));
 }
 DEF_OP(CONV_STR) {
   stackPush(Val_Str::mk(pop_string()));

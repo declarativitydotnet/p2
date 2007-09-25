@@ -18,9 +18,10 @@
 
 #include "element.h"
 #include "elementRegistry.h"
+#include "eventLoop.h"
+#include "p2net.h"
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-#include "loop.h"
 
 //
 // The Udp2::Rx element emits 2-tuples:
@@ -58,12 +59,12 @@ public:
 
     void socket_on()
     {
-      fileDescriptorCB(u->sd, b_selread,
-                       boost::bind(&Udp2::Rx::socket_cb, this));
+      EventLoop::loop()->add_read_fcb(u->sd, 
+				      boost::bind(&Udp2::Rx::socket_cb, this));
     };
     void socket_off()
     {
-      removeFileDescriptorCB(u->sd, b_selread);
+      EventLoop::loop()->del_read_fcb(u->sd);
     };
 
     /** Turn on the socket and start listening. */
@@ -90,8 +91,13 @@ public:
 
     virtual ~Tx() {};
 
-    void socket_on() { fileDescriptorCB(u->sd, b_selwrite, boost::bind(&Udp2::Tx::socket_cb, this));};
-    void socket_off() { removeFileDescriptorCB(u->sd, b_selwrite); };
+    void socket_on() { 
+      EventLoop::loop()->add_write_fcb(u->sd, 
+				       boost::bind(&Udp2::Tx::socket_cb,this));
+    };
+    void socket_off() { 
+      EventLoop::loop()->del_write_fcb(u->sd);
+    };
 
     /** Turn on the socket */
     virtual int initialize();

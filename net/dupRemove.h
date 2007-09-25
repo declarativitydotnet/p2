@@ -19,7 +19,7 @@
 #include "elementRegistry.h"
 #include "inlines.h"
 #include "tupleseq.h"
-#include "loop.h"
+#include "eventLoop.h"
 
 
 class DupRemove : public Element {
@@ -37,18 +37,17 @@ public:
 
 private:
   class Connection {
-    public:
-      Connection() 
-        : _tcb(NULL), _cum_seq(0) { touch(); }
-
-      bool received(TuplePtr);
-      long touch_duration() const;
-      void touch();
-
-      boost::posix_time::ptime last_touched;
-      timeCBHandle*          _tcb;
-      SeqNum                 _cum_seq;
-      std::map<SeqNum, bool> _receiveMap; 
+  public:
+    Connection() : _tcb(0), _cum_seq(0) { touch(); }
+    
+    bool received(TuplePtr);
+    long touch_duration();
+    void touch();
+    
+    boost::posix_time::ptime last_touched;
+    EventLoop::TimerID     _tcb;
+    SeqNum                 _cum_seq;
+    std::map<SeqNum, bool> _receiveMap; 
   };
   typedef boost::shared_ptr<Connection> ConnectionPtr;
 

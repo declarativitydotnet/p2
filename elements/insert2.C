@@ -13,58 +13,43 @@
  */
 
 #include "insert2.h"
-#include "commonTable.h"
-#include "val_str.h"
 #include "plumber.h"
-#include "scheduler.h"
+#include "val_str.h"
+#include "eventLoop.h"
 
 DEFINE_ELEMENT_INITS(Insert2, "Insert2");
 
-//get hold of the table to perform insertion
-Insert2::Action::Action(CommonTablePtr table)
-  : _table(table) { }
-
-//actually commits stuff.
-//assuming _table->insert is atomic, though.
-void 
-Insert2::Action::commit()
-{
-  for (TupleSet::iterator i = _buffer.begin();
-       i !=_buffer.end(); i++) {
-    _table->insert(*i);
-  }
-  _buffer.clear();
-}
-
-void 
-Insert2::Action::abort()
-{
-  _buffer.clear();
-}
-
 Insert2::Insert2(string name, CommonTablePtr table)
-  : Element(name, 1, 0), _action(new Action(table))
+  : Element(name, 1, 0), 
+    _table(table),
+    _action_cl(boost::bind(&Insert2::_action, this)),
+    _action_queued(false)
 {
 }
 
 Insert2::Insert2(TuplePtr args)
-  : Element (Val_Str::cast((*args)[2]), 1,0)
+  : Element(Val_Str::cast((*args)[2]),1,0),
+    _table(Plumber::catalog()->table((*args)[3]->toString())),
+    _action_cl(boost::bind(&Insert2::_action, this)),
+    _action_queued(false)
 {
-  CommonTablePtr tbl = Plumber::catalog()->table((*args)[3]->toString());
-  _action.reset(new Action(tbl));
 }
 
-int 
-Insert2::initialize()
+void Insert2::_action()
 {
-  Plumber::scheduler()->action(_action);
-  return 0;
+  for (TupleSet::iterator i = _buffer.begin(); i != _buffer.end(); i++) {
+    _table->insert(*i);
+  }
+  _buffer.clear();
+  _action_queued = false;
 }
 
-int
-Insert2::push(int port, TuplePtr p, b_cbv cb)
+int Insert2::push(int port, TuplePtr t, b_cbv cb)
 {
-  _action->addTuple(p);
-  return 1;  
+  _buffer.insert(t);
+  if (!_action_queued) {
+    _action_queued = true;
+    EventLoop::loop()->enqueue_action(_action_cl);
+  }
+  return 1;
 }
-

@@ -14,7 +14,6 @@
 
 #include <errno.h>
 #include "printTime.h"
-#include "loop.h"
 #include "val_str.h"
 
 DEFINE_ELEMENT_INITS(PrintTime, "PrintTime");
@@ -42,9 +41,9 @@ PrintTime::~PrintTime()
 
 TuplePtr PrintTime::simple_action(TuplePtr p)
 {
-  boost::posix_time::ptime now_ts;
-  
-  getTime(now_ts);
+  boost::posix_time::ptime now_ts =
+    boost::posix_time::microsec_clock::universal_time();
+
   ELEM_OUTPUT("Print[" << _prefix
               << ", "
               << boost::posix_time::to_simple_string(now_ts)
