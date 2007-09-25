@@ -8,18 +8,17 @@
  * Berkeley, CA,  94707. Attention: P2 Group.
  * 
  */
+#include "roundTripTimer.h"
 
 #include <algorithm>
 #include <iostream>
-#include "roundTripTimer.h"
-#include "loop.h"
-#include "val_uint64.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "val_double.h"
 #include "val_str.h"
 #include "val_tuple.h"
 #include "val_null.h"
 #include "netglobals.h"
+#include "eventLoop.h"
 #include <boost/bind.hpp>
 
 DEFINE_ELEMENT_INITS(RoundTripTimer, "RoundTripTimer")
@@ -32,22 +31,24 @@ class TupleTimestamp
 {
 public:
   TupleTimestamp(ValuePtr dest, SeqNum seq) 
-    : dest_(dest), seq_(seq) { getTime(tt_); }
+    : dest_(dest), 
+      seq_(seq),
+      tt_(boost::posix_time::microsec_clock::universal_time())
+  {};
 
   int32_t delay();
 
   boost::posix_time::ptime tt_;	// Transmit time
   ValuePtr      dest_;		// Tuple destination
   SeqNum        seq_;		// Tuple sequence number
-  timeCBHandle* tcb_;    	// Used to cancel timer
+  EventLoop::TimerID tcb_;    	// Used to cancel timer
 
 };
 
 int32_t TupleTimestamp::delay()
 {
-  boost::posix_time::ptime  now;
-  getTime(now);
-
+  boost::posix_time::ptime now 
+    = boost::posix_time::microsec_clock::universal_time();
   return((now - tt_).total_milliseconds());
 }
 
@@ -84,7 +85,7 @@ int RoundTripTimer::push(int port, TuplePtr tp, b_cbv cb)
     if ((*tp)[1]->typeCode() == Value::STR && Val_Str::cast((*tp)[1]) == "ACK") {
       // Acknowledge tuple and update measurements.
       ValuePtr dest = (*tp)[DEST+2];			// Destination address
-      SeqNum   seq  = Val_UInt64::cast((*tp)[SEQ+2]);	// Sequence number
+      SeqNum   seq  = Val_Int64::cast((*tp)[SEQ+2]);	// Sequence number
       RTTIndex::iterator iter = rttmap_.find(dest);
       if (iter == rttmap_.end()) {
         TELL_INFO << "RTT TIMER UNKNOWN DESTINATION: " << dest->toString() << std::endl;
@@ -102,7 +103,7 @@ int RoundTripTimer::push(int port, TuplePtr tp, b_cbv cb)
  */
 TuplePtr RoundTripTimer::simple_action(TuplePtr p)
 {
-  SeqNum   seq  = Val_UInt64::cast((*p)[SEQ]);
+  SeqNum   seq  = Val_Int64::cast((*p)[SEQ]);
   ValuePtr dest = (*p)[DEST];
 
   RTTIndex::iterator iter = rttmap_.find(dest);
@@ -145,8 +146,8 @@ void RoundTripTimer::map(TupleTimestamp *tt)
   m->insert(std::make_pair(tt->seq_, tt));
 
   tt->tcb_ =
-    delayCB((0.0 + rttrec->rto_) / 1000.0,
-            boost::bind(&RoundTripTimer::timeout_cb, this, tt), this); 
+    EventLoop::loop()->enqueue_timer((0.0 + rttrec->rto_) / 1000.0,
+				     boost::bind(&RoundTripTimer::timeout_cb, this, tt)); 
 }
 
 int32_t RoundTripTimer::dealloc(ValuePtr dest, SeqNum seq)
@@ -159,8 +160,8 @@ int32_t RoundTripTimer::dealloc(ValuePtr dest, SeqNum seq)
       TupleTimestamp *record = record_iter->second;
       delay = record->delay();
 
-      if (record->tcb_ != NULL) {
-        timeCBRemove(record->tcb_);
+      if (record->tcb_ != 0) {
+        EventLoop::loop()->cancel_timer(record->tcb_);
       }
       delete record;
       iter->second->erase(record_iter);
@@ -180,7 +181,7 @@ int32_t RoundTripTimer::dealloc(ValuePtr dest, SeqNum seq)
 void RoundTripTimer::timeout_cb(TupleTimestamp *tt)
 {
   timeout(tt->dest_); 
-  tt->tcb_ = NULL;
+  tt->tcb_ = 0;
   dealloc(tt->dest_, tt->seq_);
 }
 

@@ -17,8 +17,7 @@
 #include "value.h"
 #include "val_str.h"
 #include "val_null.h"
-#include "val_uint32.h"
-#include "val_int32.h"
+#include "val_int64.h"
 #include "val_list.h"
 #include "val_tuple.h"
 #include "oper.h"
@@ -92,8 +91,8 @@ namespace compile {
           locVariable = namestracker::location(schema);
         }
         else if (pos > 1) {
-          int oldPos = Val_Int32::cast((*term)[catalog->attribute(FUNCTOR, "POSITION")]);
-          term->set(catalog->attribute(FUNCTOR, "POSITION"), Val_UInt32::mk(oldPos+2));
+          int oldPos = Val_Int64::cast((*term)[catalog->attribute(FUNCTOR, "POSITION")]);
+          term->set(catalog->attribute(FUNCTOR, "POSITION"), Val_Int64::mk(oldPos+2));
           term->freeze();
           functorTbl->insert(term);
         }
@@ -101,16 +100,16 @@ namespace compile {
       for (iter = assignTbl->lookup(CommonTable::theKey(CommonTable::KEY2), 
                                      assignKey, rule); !iter->done(); pos++) { 
         TuplePtr term = iter->next()->clone();
-        int oldPos = Val_Int32::cast((*term)[catalog->attribute(ASSIGN, "POSITION")]);
-        term->set(catalog->attribute(ASSIGN, "POSITION"), Val_UInt32::mk(oldPos+2));
+        int oldPos = Val_Int64::cast((*term)[catalog->attribute(ASSIGN, "POSITION")]);
+        term->set(catalog->attribute(ASSIGN, "POSITION"), Val_Int64::mk(oldPos+2));
         term->freeze();
         assignTbl->insert(term);
       }
       for (iter = selectTbl->lookup(CommonTable::theKey(CommonTable::KEY2), 
                                      selectKey, rule); !iter->done(); pos++) { 
         TuplePtr term = iter->next()->clone();
-        int oldPos = Val_Int32::cast((*term)[catalog->attribute(SELECT, "POSITION")]);
-        term->set(catalog->attribute(SELECT, "POSITION"), Val_UInt32::mk(oldPos+2));
+        int oldPos = Val_Int64::cast((*term)[catalog->attribute(SELECT, "POSITION")]);
+        term->set(catalog->attribute(SELECT, "POSITION"), Val_Int64::mk(oldPos+2));
         term->freeze();
         selectTbl->insert(term);
       }
@@ -137,7 +136,7 @@ namespace compile {
       status->append(Val_Null::mk());                // Set TID below
       status->append(Val_Str::mk("PROBE"));          // ECA action type
       status->append(Val_List::mk(schema));          // Schema
-      status->append(Val_UInt32::mk(2));             // Position right after event
+      status->append(Val_Int64::mk(2));             // Position right after event
       status->append(Val_Null::mk());                // Acess method
 
       /* Locate the table id associated with the name COMPILE_STATUS.
@@ -168,15 +167,15 @@ namespace compile {
       TuplePtr select = Tuple::mk(SELECT, true);
       select->append((*rule)[TUPLE_ID]);
       select->append(Val_Tuple::mk(boolExpr)); // Boolean expression
-      select->append(Val_UInt32::mk(3));       // Position right after status table
+      select->append(Val_Int64::mk(3));       // Position right after status table
       select->append(Val_Null::mk());          // Access method
       select->freeze();
       selectTbl->insert(select); 
       TELL_INFO << "\tSELECTION ADDED: " << select->toString() << std::endl;
 
       rule = rule->clone();
-      unsigned termCount = Val_UInt32::cast((*rule)[catalog->attribute(RULE, "TERM_COUNT")]);
-      rule->set(catalog->attribute(RULE, "TERM_COUNT"), Val_UInt32::mk(termCount + 2));
+      unsigned termCount = Val_Int64::cast((*rule)[catalog->attribute(RULE, "TERM_COUNT")]);
+      rule->set(catalog->attribute(RULE, "TERM_COUNT"), Val_Int64::mk(termCount + 2));
       rule->freeze();
       catalog->table(RULE)->insert(rule);      
     }

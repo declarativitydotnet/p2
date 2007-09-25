@@ -51,9 +51,10 @@ public:
   static ValuePtr xdr_unmarshal( XDR *x );
 
   // Constructors
-  Val_Time(string theTime) : 
-    t(boost::posix_time::time_from_string(theTime)) {};
-  Val_Time(boost::posix_time::ptime theTime) : t(theTime) {};
+  Val_Time(string theTime) 
+    : t(boost::posix_time::time_from_string(theTime)) {};
+  Val_Time(boost::posix_time::ptime theTime) 
+    : t(theTime) {};
   Val_Time(struct timespec theTime);
 
   // Factory

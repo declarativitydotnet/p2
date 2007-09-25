@@ -18,7 +18,7 @@
 #include "systemTable.h"
 #include "val_tuple.h"
 #include "val_list.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "val_null.h"
 
 namespace compile {
@@ -62,7 +62,7 @@ namespace compile {
         exprString(oss, Val_Tuple::cast((*expr)[4])); 
       }
       else if (type == FUNCTION) {
-        unsigned args = Val_UInt32::cast((*expr)[3]);
+        unsigned args = Val_Int64::cast((*expr)[3]);
         *oss << (*expr)[2]->toString() << "("; // Function name
         for (unsigned int i = 0; i < args; i++) {
           exprString(oss, Val_Tuple::cast((*expr)[4 + i])); 
@@ -194,7 +194,7 @@ namespace compile {
       }
       string name = (*Iter->next())[Plumber::catalog()->attribute(FUNCTION, "PEL")]->toString();
         
-      unsigned args = Val_UInt32::cast((*funcTp)[3]);
+      unsigned args = Val_Int64::cast((*funcTp)[3]);
       while (args > 0) {
          pel << gen(schema, Val_Tuple::cast((*funcTp)[3+args--])) << " ";
       } 

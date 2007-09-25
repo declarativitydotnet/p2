@@ -25,8 +25,7 @@
 #include "element.h"
 #include "elementRegistry.h"
 #include "commonTable.h"
-#include "commitManager.h"
-#include "iStateful.h"
+#include "eventLoop.h"
 
 class CommitBuf : public Element {
 public:
@@ -48,21 +47,11 @@ public:
   DECLARE_PUBLIC_ELEMENT_INITS
 
 private:
-  typedef boost::function<void (TupleSet*)> FlushCB;
-  class Action : public CommitManager::Action {
-  public:
-    Action(FlushCB);
-  private:
-    void commit();
-    void abort();
+  TupleSet		_buffer;
 
-    FlushCB _flush;
-  };
-
-  void flush(TupleSet*);
-  int initialize();
-
-  CommitManager::ActionPtr _action;
+  EventLoop::Closure	_action_cl;
+  bool			_action_queued;
+  void			_action();
 
   DECLARE_PRIVATE_ELEMENT_INITS
 };

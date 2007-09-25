@@ -194,7 +194,7 @@ WHITESPACE	[ \t\r\n]+
 
 <INITIAL>({DIGIT}+|0[xX]{HEXDIGIT}+)U {
   // Unsigned integer literal (including octal and/or hex)
-  lvalp->v = new Parse_Val(Val_UInt64::mk(strtoull(yytext,NULL,0)));
+  lvalp->v = new Parse_Val(Val_Int64::mk(strtoull(yytext,NULL,0)));
   return OL_VALUE;
 }
 

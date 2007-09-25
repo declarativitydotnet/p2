@@ -19,8 +19,7 @@
 #include "elementRegistry.h"
 #include "inlines.h"
 #include "tupleseq.h"
-#include "loop.h"
-
+#include "eventLoop.h"
 
 class ODelivery : public Element {
 public:
@@ -36,18 +35,17 @@ public:
 
 private:
   class Connection {
-    public:
-      Connection(uint ns) 
-        : tcb_(NULL), next_seq_(ns) { touch(); }
-
-      void insert(TuplePtr);
-      long touch_duration() const;
-      void touch();
-
-      boost::posix_time::ptime last_touched;
-      timeCBHandle*         tcb_;
-      SeqNum                next_seq_;
-      std::vector<TuplePtr> queue_; 
+  public:
+    Connection(uint ns) : tcb_(0), next_seq_(ns) { touch(); }
+    
+    void insert(TuplePtr);
+    long touch_duration();
+    void touch();
+    
+    boost::posix_time::ptime	last_touched;
+    EventLoop::TimerID		tcb_;
+    SeqNum			next_seq_;
+    std::vector<TuplePtr>	queue_; 
   };
   typedef boost::shared_ptr<Connection> ConnectionPtr;
 

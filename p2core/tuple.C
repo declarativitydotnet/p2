@@ -17,9 +17,8 @@
 #include "value.h"
 #include "tuple.h"
 #include <assert.h>
-#include "val_uint32.h"
 #include "val_str.h"
-#include "val_int32.h"
+#include "val_int64.h"
 #include "val_null.h"
 #include "reporting.h"
 
@@ -48,14 +47,14 @@ Tuple::xdr_marshal( XDR *x )
   int count = 0;
   if(_tags){
     count = _tags->size();
-    (Val_Int32::mk(count))->xdr_marshal(x);
+    (Val_Int64::mk(count))->xdr_marshal(x);
     (Val_Str::mk("sourceNode"))->xdr_marshal(x);
     tag("localNode")->xdr_marshal(x);
     (Val_Str::mk("ID"))->xdr_marshal(x);
-    (Val_UInt32::mk(ID()))->xdr_marshal(x);
+    (Val_Int64::mk(ID()))->xdr_marshal(x);
   }
   else {
-    (Val_Int32::mk(count))->xdr_marshal(x);
+    (Val_Int64::mk(count))->xdr_marshal(x);
   }
 
 }
@@ -77,7 +76,7 @@ Tuple::xdr_unmarshal(XDR* x)
   }
 
   // retrieve debugging metadata in the tags
-  int numTags = Val_Int32::cast(Value::xdr_unmarshal(x));
+  int numTags = Val_Int64::cast(Value::xdr_unmarshal(x));
   if(numTags > 0){
     // create a tag depending on the tags coming from wire
     ValuePtr sourceNodeTag = Value::xdr_unmarshal(x);
@@ -251,15 +250,12 @@ Tuple::concat(TuplePtr tf)
   }
 };
 
+#include <time.h>
 
 Tuple::~Tuple()
 {
-//   TELL_WORDY << "Destroying tuple "
-//             << toString()
-//             << " with ID "
-//             << _ID
-//             << "\n";
-
+  //TELL_ERROR << "Destroy_tuple " << time(NULL) << " with ID " << _ID << ", "
+  //<< toString() << "\n";
   if (_tags) {
     delete _tags;
   }
@@ -279,9 +275,7 @@ Tuple::Tuple()
     _tags(0),
     _ID(_tupleIDCounter++)
 {
-//   TELL_WORDY << "Creating tuple " << toString()
-//             << "with ID " << _ID
-//             << "\n";
+  //TELL_ERROR << "Create_tuple " << time(NULL) << " with ID " << _ID << "\n";
 }
 
 
@@ -304,7 +298,7 @@ Tuple::mk(string name, bool id)
     p->append(Val_Null::mk());
 
   if (id)
-    p->append(Val_UInt32::mk(Plumber::catalog()->uniqueIdentifier()));
+    p->append(Val_Int64::mk(Plumber::catalog()->uniqueIdentifier()));
   return p;
 };
 

@@ -19,7 +19,7 @@
 #include "config.h"
 #include "element.h"
 #include "fdbuf.h"
-#include "loop.h"
+#include "eventLoop.h"
 
 #include <boost/regex.hpp>
 #include <boost/bind.hpp>
@@ -44,9 +44,8 @@ private:
   void write_cb();
   void rx_hdr_cb();
   void rx_body_cb();
-  void socket_on() { fileDescriptorCB(sd, b_selread,
-                                      boost::bind(&PlSensor::rx_body_cb, this)); };
-  void socket_off() { removeFileDescriptorCB(sd, b_selread); };
+  void socket_on() { EventLoop::loop()->add_read_fcb(sd, boost::bind(&PlSensor::rx_body_cb, this)); };
+  void socket_off() { EventLoop::loop()->del_read_fcb(sd); };
   void element_cb();
   
   static const uint32_t MAX_REQUEST_SIZE = 10000;
@@ -64,11 +63,10 @@ private:
   u_int16_t	port;
   string	path;
   int		sd; 
-  tcpHandle*    tc;
   boost::regex	req_re;
   Fdbuf		hdrs;
   in_addr	localaddr;
-  timeCBHandle  *wait_delaycb;
+  EventLoop::TimerID wait_delaycb;
 
 
   // Time between reconnects

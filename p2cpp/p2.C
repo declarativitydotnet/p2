@@ -12,7 +12,6 @@
  */
 
 #include "p2.h"
-#include "loop.h"
 
 // For (2)wait
 #include <sys/types.h>
@@ -160,10 +159,6 @@ P2::createDataflow(string dataflowName,
                    bool outputStages,
                    bool outputDot)
 {
-  // Initialize the event loop
-  eventLoopInitialize();
-
-
   // Load up all loadable modules
   loadAllModules();
 
@@ -315,7 +310,7 @@ P2::createDataflow(string dataflowName,
 void
 P2::run()
 {
-  eventLoop();
+  EventLoop::loop()->start();
 }
 
 

@@ -15,63 +15,45 @@
 #include "commitBuf.h"
 #include "commonTable.h"
 #include "val_str.h"
-#include "plumber.h"
-#include "scheduler.h"
+#include "eventLoop.h"
 
 DEFINE_ELEMENT_INITS(CommitBuf, "CommitBuf");
 
 CommitBuf::CommitBuf(string name)
   : Element(name, 1, 1), 
-    _action(new CommitBuf::Action(boost::bind(&CommitBuf::flush, this, _1))) { }
+    _action_cl(boost::bind(&CommitBuf::_action, this)),
+    _action_queued(false)
+{
+}
 
 CommitBuf::CommitBuf(TuplePtr args)
   : Element(Val_Str::cast((*args)[2]),1,1),
-    _action(new CommitBuf::Action(boost::bind(&CommitBuf::flush, this, _1))) { }
+    _action_cl(boost::bind(&CommitBuf::_action, this)),
+    _action_queued(false)
+{
+}
 
-void CommitBuf::flush(TupleSet *buffer)
+void CommitBuf::_action()
 {
   ELEM_INFO("CommitBuf Flushing "
-            << buffer->size()
+            << _buffer.size()
             << " Tuples");
-  for (TupleSet::iterator it = buffer->begin(); 
-      it!= buffer->end();it++){
+  for (TupleSet::iterator it = _buffer.begin(); it != _buffer.end(); it++ ) {
     if (!output(0)->push(*it, 0) == 1) {
       throw Element::Exception("COMMIT BUFFER: down stream element can't handle all tuples!");
     }
   }
-}
-
-int
-CommitBuf::initialize()
-{
-  Plumber::scheduler()->action(_action);
-  return 0;
+  _buffer.clear();
+  _action_queued = false;
 }
 
 int 
 CommitBuf::push(int port, TuplePtr t, b_cbv cb)
 {
-  _action->addTuple(t);
+  _buffer.insert(t);
+  if (!_action_queued) {
+    _action_queued = true;
+    EventLoop::loop()->enqueue_action(boost::bind(&CommitBuf::_action,this));
+  }
   return 1;
-}
-
-/**********************************
-* CommitBuf::Action
-*/
-
-CommitBuf::Action::Action(CommitBuf::FlushCB cb) 
-  : _flush(cb) {}
-
-void
-CommitBuf::Action::commit()
-{
-  _flush(&_buffer);
-  _buffer.clear();
-
-}
-
-void
-CommitBuf::Action::abort()
-{
-  _buffer.clear();
 }

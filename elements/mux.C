@@ -13,9 +13,9 @@
  */
 
 #include "mux.h"
-#include "loop.h"
 #include "val_str.h"
-#include "val_uint32.h"
+#include "val_int64.h"
+#include "eventLoop.h"
 #include <boost/bind.hpp>
 
 DEFINE_ELEMENT_INITS(Mux, "Mux");
@@ -42,10 +42,10 @@ Mux::Mux(string name,
  * Generic constructor.
  * Arguments:
  * 2. Val_Str:    Element Name.
- * 3. Val_UInt32: The number of inputs.
+ * 3. Val_Int64: The number of inputs.
  */
 Mux::Mux(TuplePtr args)
-  : Element(Val_Str::cast((*args)[2]), Val_UInt32::cast((*args)[3]), 1),
+  : Element(Val_Str::cast((*args)[2]), Val_Int64::cast((*args)[3]), 1),
     _blocked(false),
     _pushCallbacks(),
     _inputTuples(),
@@ -66,7 +66,8 @@ void Mux::callback()
   // Wake up immediately after and push out all pending tuples.  Remain
   // blocked however.
   assert(_timeCallback == NULL);
-  _timeCallback = delayCB(0.0, _catchUp, this);
+  EventLoop::loop()->enqueue_dpc(_catchUp);
+  // _timeCallback = delayCB(0.0, _catchUp, this);
 }
 
 void Mux::catchUp()

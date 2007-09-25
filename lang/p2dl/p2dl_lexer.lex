@@ -28,8 +28,7 @@
 #include <limits.h>
 #include <stdlib.h>
 #include "val_null.h"
-#include "val_int32.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "val_double.h"
 #include "val_id.h"
 
@@ -140,9 +139,9 @@ WHITESPACE	[ \t\r\n]+
   lvalp->v = new compile::p2dl::Value(Val_Null::mk()); return P2DL_NULL; }
 
 <INITIAL>"true" { 
-  lvalp->v = new compile::p2dl::Value(Val_UInt32::mk(1)); return P2DL_UNSIGNED; }
+  lvalp->v = new compile::p2dl::Value(Val_Int64::mk(1)); return P2DL_UNSIGNED; }
 <INITIAL>"false" { 
-  lvalp->v = new compile::p2dl::Value(Val_UInt32::mk(0)); return P2DL_UNSIGNED; }
+  lvalp->v = new compile::p2dl::Value(Val_Int64::mk(0)); return P2DL_UNSIGNED; }
 
 <INITIAL>[a-z]{ALNUM}* { 
   lvalp->v = new compile::p2dl::Variable(Val_Str::mk(yytext)); 
@@ -153,15 +152,15 @@ WHITESPACE	[ \t\r\n]+
   return P2DL_NAME; 
 }
 
-<INITIAL>({DIGIT}+|0[xX]{HEXDIGIT}+) {
+ <INITIAL>({DIGIT}+|0[xX]{HEXDIGIT}+) {
   // Unsigned integer literal (including octal and/or hex
-  lvalp->v = new compile::p2dl::Value(Val_UInt32::mk(strtoul(yytext,NULL,0)));
+  lvalp->v = new compile::p2dl::Value(Val_Int64::mk(strtoul(yytext,NULL,0)));
   return P2DL_UNSIGNED;
 }
 
 <INITIAL>(-?{DIGIT}+|0[xX]{HEXDIGIT}+) {
   // Some integer literal (including octal and/or hex
-  lvalp->v = new compile::p2dl::Value(Val_Int32::mk(strtol(yytext,NULL,0)));
+  lvalp->v = new compile::p2dl::Value(Val_Int64::mk(strtol(yytext,NULL,0)));
   return P2DL_NUMBER;
 }
 

@@ -37,7 +37,6 @@
 #include "commonTable.h"
 #include "val_tuple.h"
 #include "val_null.h"
-#include "iStateful.h"
 
 class Lookup2 : public Element {
 public:
@@ -71,9 +70,6 @@ public:
 
 private:
   int initialize();
-
-  /** My stateful proxy */
-  IStatefulPtr _stateProxy;
 
   /** My table */
   CommonTablePtr _table;

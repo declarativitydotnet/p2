@@ -17,9 +17,9 @@
 #include "tuple.h"
 #include "element.h"
 #include "elementRegistry.h"
-#include "loop.h"
 #include "inlines.h"
 #include "tupleseq.h"
+#include "eventLoop.h"
 
 
 class RDelivery : public Element {
@@ -51,13 +51,13 @@ private:
     typedef boost::shared_ptr<Tuple> TuplePtr;
 
     Connection(ValuePtr dest, double rtt)
-      : _dest(dest), _rtt(rtt), _cum_seq(0), _tcb(NULL) {} 
+      : _dest(dest), _rtt(rtt), _cum_seq(0), _tcb(0) {} 
 
     ValuePtr             _dest;
     std::deque<TuplePtr> _outstanding; 	// All outstanding tuples
     double               _rtt;		// The round trip time
     SeqNum               _cum_seq;	// The cumulative sequence
-    timeCBHandle*        _tcb; 		// Used to cancel retransmit timer
+    EventLoop::TimerID   _tcb; 		// Used to cancel retransmit timer
   };
   typedef boost::shared_ptr<Connection> ConnectionPtr;
 

@@ -15,10 +15,9 @@
 #include "rangeLookup.h"
 #include "val_str.h"
 #include "val_list.h"
-#include "val_int32.h"
-#include "val_uint32.h"
+#include "val_int64.h"
+#include "eventLoop.h"
 #include "plumber.h"
-#include "scheduler.h"
 
 DEFINE_ELEMENT_INITS(RangeLookup, "RangeLookup")
 
@@ -31,7 +30,6 @@ RangeLookup::RangeLookup(string name,
  	  	 bool openR,
                  b_cbv completion_cb)
   : Element(name, 1, 1),
-    _stateProxy(new IStateful()),
     _table(table),
     _pushCallback(0),
     _pullCallback(0),
@@ -45,7 +43,6 @@ RangeLookup::RangeLookup(string name,
 
 RangeLookup::RangeLookup(TuplePtr args)
   : Element(Val_Str::cast((*args)[2]),1,1),
-    _stateProxy(new IStateful()),
     _table(Plumber::catalog()->table(Val_Str::cast((*args)[3]))),
     _pushCallback(0),
     _pullCallback(0),
@@ -54,25 +51,25 @@ RangeLookup::RangeLookup(TuplePtr args)
   ListPtr lookupKey = Val_List::cast((*args)[4]);
   for (ValPtrList::const_iterator i = lookupKey->begin();
        i != lookupKey->end(); i++)
-    _lKey.push_back(Val_UInt32::cast(*i));
+    _lKey.push_back(Val_Int64::cast(*i));
 
   lookupKey = Val_List::cast((*args)[5]);
   for (ValPtrList::const_iterator i = lookupKey->begin();
        i != lookupKey->end(); i++)
-    _rKey.push_back(Val_UInt32::cast(*i));
+    _rKey.push_back(Val_Int64::cast(*i));
 
 
   ListPtr indexKey = Val_List::cast((*args)[6]);
   for (ValPtrList::const_iterator i = indexKey->begin();
        i != indexKey->end(); i++)
-    _indexKey.push_back(Val_UInt32::cast(*i));
+    _indexKey.push_back(Val_Int64::cast(*i));
 
-  if(Val_Int32::cast((*args)[7]) == 1)
+  if(Val_Int64::cast((*args)[7]) == 1)
     _openL = true;
   else
     _openL = false;
 
-  if(Val_Int32::cast((*args)[8]) == 1)
+  if(Val_Int64::cast((*args)[8]) == 1)
     _openL = true;
   else
     _openL = false;
@@ -87,7 +84,7 @@ RangeLookup::~RangeLookup()
 int
 RangeLookup::initialize()
 {
-  Plumber::scheduler()->stateful(_stateProxy);
+  ///EventLoop::loop()->stateful(_stateProxy);
   return 0;
 }
 
@@ -128,7 +125,6 @@ RangeLookup::push(int port,
     // Fetch the iterator.
     _iterator = _table->range1DLookup(_lKey,_rKey, _indexKey, 
 					_openL, _openR, _lookupTuple);
-    _stateProxy->state(IStateful::STATEFUL);
     // And stop the pusher since we have to wait until the iterator is
     // flushed one way or another
     _pushCallback = cb;
@@ -205,8 +201,6 @@ RangeLookup::pull(int port,
       _lookupTupleValue.reset();
       _iterator.reset();
       ELEM_WORDY("push: iterator now is null");
-
-      _stateProxy->state(IStateful::STATELESS);
       
       // Wake up any pusher
       if (_pushCallback) {

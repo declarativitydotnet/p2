@@ -16,10 +16,8 @@
 #ifndef __TRAFFIC_MANAGER_H__
 #define __TRAFFIC_MANAGER_H__
 
-#include <element.h>
-#include <deque>
-
-struct timeCBHandle;
+#include "element.h"
+#include "eventLoop.h"
 
 class TrafficManager : public Element { 
  public:
@@ -53,7 +51,7 @@ class TrafficManager : public Element {
   /** Callback to my runTimer() */
   b_cbv                  _runTimerCB;
   /** My time callback ID. */
-  timeCBHandle *           _timeCallback;
+  EventLoop::TimerID     _timeCallback;
 
   string  my_addr_;
   uint my_key_;

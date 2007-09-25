@@ -55,12 +55,7 @@ public:
 
   Val_ID(std::vector<uint32_t> theID);
 
-
-  Val_ID(uint32_t theID);
-
-
-  Val_ID(uint64_t theID);
-
+  Val_ID(int64_t theID);
 
   Val_ID(std::string);
 

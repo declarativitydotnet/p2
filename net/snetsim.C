@@ -10,9 +10,9 @@
  * 
  */
 
-#include <iostream>
 #include "snetsim.h"
-#include "loop.h"
+
+#include "eventLoop.h"
 #include <boost/bind.hpp>
 
 SimpleNetSim::SimpleNetSim(string name, uint32_t min, uint32_t max, double p)
@@ -53,7 +53,7 @@ void SimpleNetSim::grab() {
   if (t) {
     uint32_t d = min_delay_ + uint32_t((max_delay_ - min_delay_)*(rand()/double(RAND_MAX)));
 
-    delayCB((0.0 + d) / 1000.0, boost::bind(&SimpleNetSim::tuple_ready, this, t), this);
+    EventLoop::loop()->enqueue_timer((0.0 + d) / 1000.0, boost::bind(&SimpleNetSim::tuple_ready, this, t));
   } else {
     pull_pending = false; 
   }
@@ -61,7 +61,7 @@ void SimpleNetSim::grab() {
 
 void SimpleNetSim::element_cb() {
   if (!pull_pending) {
-    delayCB(0.0, boost::bind(&SimpleNetSim::grab, this), this);
+    EventLoop::loop()->enqueue_dpc(boost::bind(&SimpleNetSim::grab, this));
   }
   pull_pending = true;
 }

@@ -11,7 +11,7 @@
 
 #include "compileTerminal.h"
 #include "plumber.h"
-#include "loop.h"
+#include "eventLoop.h"
 #include "commonTable.h"
 #include "systemTable.h"
 #include "tuple.h"
@@ -22,7 +22,7 @@
 #include <iostream>
 #include <sys/wait.h>
 #include <unistd.h>
-#include "boost/bind.hpp"
+#include <boost/bind.hpp>
 
 DEFINE_ELEMENT_INITS(CompileTerminal, "CompileTerminal");
 
@@ -51,12 +51,14 @@ void
 CompileTerminal::programUpdate(TuplePtr program)
 {
   static int counter = 0;
-
+  
   if ((*program)[Plumber::catalog()->attribute(PROGRAM, "STATUS")]->toString() == "installed") {
     Plumber::toDot("compileTerminal.dot");
     ELEM_OUTPUT("Program successfully installed. "
                 << "See compileTerminal.dot for dataflow description.");
-    if (!counter) delayCB(1, boost::bind(&CompileTerminal::terminal, this), this);
+    if (!counter) {
+      EventLoop::loop()->enqueue_timer(1, boost::bind(&CompileTerminal::terminal, this));
+    }
     counter++;
   }
   else {
@@ -65,7 +67,6 @@ CompileTerminal::programUpdate(TuplePtr program)
                             attribute(PROGRAM, "STATUS")]->toString());
   }
 }
-
 void
 CompileTerminal::terminal()
 {
@@ -136,7 +137,7 @@ CompileTerminal::initialize()
 {
   CommonTablePtr programTbl = Plumber::catalog()->table(PROGRAM);
   programTbl->updateListener(boost::bind(&CompileTerminal::programUpdate, this, _1));
-  delayCB(0, boost::bind(&CompileTerminal::terminal, this), this);
+  EventLoop::loop()->enqueue_dpc(boost::bind(&CompileTerminal::terminal, this));
 
   return 0;
 }

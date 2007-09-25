@@ -17,8 +17,7 @@
 #include "value.h"
 #include "val_str.h"
 #include "val_null.h"
-#include "val_uint32.h"
-#include "val_int32.h"
+#include "val_int64.h"
 #include "val_list.h"
 #include "val_tuple.h"
 #include "oper.h"
@@ -63,11 +62,11 @@ namespace compile {
                                          CommonTable::theKey(CommonTable::KEY3), rule);
            !funcIter->done(); ) {
         TuplePtr functor = funcIter->next();
-        if ((*functor)[catalog->attribute(FUNCTOR, "POSITION")] == Val_UInt32::mk(1)) {
+        if ((*functor)[catalog->attribute(FUNCTOR, "POSITION")] == Val_Int64::mk(1)) {
           if (event) throw compile::local::Exception("LOCAL CONTEXT: More than one event in rule");
           event = functor;
         } 
-        else if ((*functor)[catalog->attribute(FUNCTOR, "POSITION")] == Val_UInt32::mk(0)) {
+        else if ((*functor)[catalog->attribute(FUNCTOR, "POSITION")] == Val_Int64::mk(0)) {
           if (head) throw compile::local::Exception("LOCAL CONTEXT: More than one head in rule");
           head = functor;
         }
@@ -81,7 +80,7 @@ namespace compile {
 
       if (eventType != "RECV" &&
           (namestracker::location(headSchema) != namestracker::location(eventSchema) ||
-           Val_UInt32::cast((*rule)[catalog->attribute(RULE, "TERM_COUNT")]) > 2)) {
+           Val_Int64::cast((*rule)[catalog->attribute(RULE, "TERM_COUNT")]) > 2)) {
         CommonTable::Key indexKey;
         indexKey.push_back(catalog->attribute(GLOBAL_EVENT, "NAME"));
         indexKey.push_back(catalog->attribute(GLOBAL_EVENT, "TYPE"));
@@ -112,7 +111,7 @@ namespace compile {
           }
           if (eventName == "periodic") return; // Don't deal with this yet.
 
-          ValuePtr newRid = Val_UInt32::mk(catalog->uniqueIdentifier());
+          ValuePtr newRid = Val_Int64::mk(catalog->uniqueIdentifier());
           string triggerName = name_space + "trigger_" + eventType + "_" + eventName;
           int functorRidPos  = catalog->attribute(FUNCTOR, "RID");
           int functorPosPos  = catalog->attribute(FUNCTOR, "POSITION");
@@ -125,14 +124,14 @@ namespace compile {
           triggerRule->append(Val_Str::mk(string("triggerRule_") + eventName)); // Rule name
           triggerRule->append((*triggerHead)[TUPLE_ID]);                        // Head tuple identifier
           triggerRule->append(Val_Null::mk());                           // P2DL text for this rule
-          triggerRule->append(Val_UInt32::mk(0));                        // Not delete rule
-          triggerRule->append(Val_UInt32::mk(2));                        // Contains head + event
+          triggerRule->append(Val_Int64::mk(0));                        // Not delete rule
+          triggerRule->append(Val_Int64::mk(2));                        // Contains head + event
           triggerRule->freeze();
           ruleTbl->insert(triggerRule);
     
           /** Point the old event tuple to the new trigger rule tuple */
           triggerEvent->set(functorRidPos, (*triggerRule)[TUPLE_ID]); // Point event to new rule
-          triggerEvent->set(functorPosPos, Val_UInt32::mk(1));        // Event Position
+          triggerEvent->set(functorPosPos, Val_Int64::mk(1));        // Event Position
           functorTbl->insert(triggerEvent);
       
           /** Create the trigger rule head tuple */
@@ -141,7 +140,7 @@ namespace compile {
           triggerHead->append(Val_Null::mk());            // Reference table (event -> none)
           triggerHead->append(Val_Str::mk("SEND"));       // ECA action type
           triggerHead->append(Val_List::mk(eventSchema)); // Attributes
-          triggerHead->append(Val_UInt32::mk(0));         // Position
+          triggerHead->append(Val_Int64::mk(0));         // Position
           triggerHead->append(Val_Null::mk());            // Acess method
           triggerHead->freeze();
           functorTbl->insert(triggerHead);
@@ -153,7 +152,7 @@ namespace compile {
           event->append(Val_Null::mk());             // Reference table (event -> none)
           event->append(Val_Str::mk("RECV"));        // ECA event type
           event->append(Val_List::mk(eventSchema));  // Attributes
-          event->append(Val_UInt32::mk(1));          // Position
+          event->append(Val_Int64::mk(1));          // Position
           event->append(Val_Null::mk());             // Acess method
           event->freeze();
           functorTbl->insert(event);

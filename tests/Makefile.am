@@ -13,36 +13,9 @@
 # DESCRIPTION: Makefile for the P2 tests
 #
 
-bin_PROGRAMS =			runOverLog \
-				benchmark \
-				udpMessage \
-				udpListen \
-				runStagedOverlog \
-				p2nc
 
-
-benchmark_SOURCES =		benchmark.C
-
-benchmark_LDADD =		$(top_builddir)/p2core/libp2core.la \
-				$(top_builddir)/lang/libp2lang.la \
-				$(top_builddir)/lang/parse/libp2parse.la \
-				$(top_builddir)/lang/eca/libp2eca.la \
-				$(top_builddir)/lang/local/libp2local.la \
-				$(top_builddir)/lang/rewrite/libp2rewrite.la \
-				$(top_builddir)/lang/debug/libp2debug.la \
-				$(top_builddir)/lang/planner/libp2planner.la \
+CORE_LIBS = 			@OPENSSL_LIB@ \
 				$(top_builddir)/lang/p2dl/libp2dl.la \
-				$(top_builddir)/elements/libp2elements.la \
-				$(top_builddir)/net/libp2net.la
-
-runStagedOverlog_SOURCES  =	runStagedOverlog.C
-
-runStagedOverlog_LDADD =	\
-				@OPENSSL_LIB@ \
-				$(top_builddir)/stages/libp2stages.la \
-				$(top_builddir)/lang/p2dl/libp2dl.la \
-				$(top_builddir)/elements/libp2elements.la \
-				$(top_builddir)/p2core/libp2core.la \
 				$(top_builddir)/lang/libp2lang.la \
 				$(top_builddir)/lang/parse/libp2parse.la \
 				$(top_builddir)/lang/eca/libp2eca.la \
@@ -51,10 +24,32 @@ runStagedOverlog_LDADD =	\
 				$(top_builddir)/lang/debug/libp2debug.la \
 				$(top_builddir)/lang/planner/libp2planner.la \
 				$(top_builddir)/net/libp2net.la \
+				$(top_builddir)/elements/libp2elements.la \
+				$(top_builddir)/p2core/libp2core.la
+
+bin_PROGRAMS =			runOverLog \
+				benchmark \
+				timings \
+				udpMessage \
+				udpListen \
+				runStagedOverlog \
+				p2nc
+
+
+benchmark_SOURCES =		benchmark.C
+benchmark_LDADD =		$(CORE_LIBS) 
+
+timings_SOURCES =		timings.C
+timings_LDADD =			$(top_builddir)/p2core/libp2core.la 
+
+runStagedOverlog_SOURCES  =	runStagedOverlog.C
+runStagedOverlog_LDADD =	\
+				@OPENSSL_LIB@ \
+				$(top_builddir)/stages/libp2stages.la \
 				$(top_builddir)/functions/libp2functions.la \
 				$(top_builddir)/aggregates/libp2aggregates.la \
-				$(top_builddir)/debugger/libp2debugger.la 
-
+				$(top_builddir)/debugger/libp2debugger.la \
+				$(CORE_LIBS)
 
 
 runOverLog_SOURCES =		runOverLog.C
@@ -92,37 +87,12 @@ p2nc_LDADD =	 		\
 
 
 udpMessage_SOURCES =		udpMessage.C
-
-udpMessage_LDADD =		\
-				@OPENSSL_LIB@ \
-				$(top_builddir)/net/libp2net.la \
-				$(top_builddir)/elements/libp2elements.la \
-				$(top_builddir)/p2core/libp2core.la \
-				$(top_builddir)/lang/libp2lang.la \
-				$(top_builddir)/lang/parse/libp2parse.la \
-				$(top_builddir)/lang/eca/libp2eca.la \
-				$(top_builddir)/lang/local/libp2local.la \
-				$(top_builddir)/lang/rewrite/libp2rewrite.la \
-				$(top_builddir)/lang/debug/libp2debug.la \
-				$(top_builddir)/lang/planner/libp2planner.la \
-				$(top_builddir)/lang/p2dl/libp2dl.la
+udpMessage_LDADD =		$(CORE_LIBS)
 
 
 udpListen_SOURCES =		udpListen.C
+udpListen_LDADD =		$(CORE_LIBS)
 
-udpListen_LDADD =		\
-				@OPENSSL_LIB@ \
-				$(top_builddir)/net/libp2net.la \
-				$(top_builddir)/elements/libp2elements.la \
-				$(top_builddir)/p2core/libp2core.la \
-				$(top_builddir)/lang/libp2lang.la \
-				$(top_builddir)/lang/parse/libp2parse.la \
-				$(top_builddir)/lang/eca/libp2eca.la \
-				$(top_builddir)/lang/local/libp2local.la \
-				$(top_builddir)/lang/rewrite/libp2rewrite.la \
-				$(top_builddir)/lang/debug/libp2debug.la \
-				$(top_builddir)/lang/planner/libp2planner.la \
-				$(top_builddir)/lang/p2dl/libp2dl.la
 
 
 CLEANFILES = core *.core *~ .\#*

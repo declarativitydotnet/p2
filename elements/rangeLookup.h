@@ -33,7 +33,6 @@
 #include "value.h"
 #include "val_tuple.h"
 #include "val_null.h"
-#include "iStateful.h"
 
 class RangeLookup : public Element {
 public:
@@ -56,65 +55,46 @@ public:
           b_cbv completion_cb = 0);
 
   RangeLookup(TuplePtr);
-
   ~RangeLookup();
-  
   
   const char *class_name() const { return "RangeLookup";}
   const char *processing() const { return "h/l"; }
   const char *flow_code() const	 { return "-/-"; }
 
   /** Receive a new lookup tuple */
-  int
-  push(int port, TuplePtr, b_cbv cb);
-
+  int push(int port, TuplePtr, b_cbv cb);
   
   /** Return a match to the current lookup */
-  TuplePtr
-  pull(int port, b_cbv cb);
-
+  TuplePtr  pull(int port, b_cbv cb);
   
   /** The END_OF_SEARCH tuple tag. */
   static string END_OF_SEARCH;
-  
-
-
 
   DECLARE_PUBLIC_ELEMENT_INITS
 
 private:
   int initialize();
 
-  /** My stateful proxy */
-  IStatefulPtr _stateProxy;
-
   /** My table */
   CommonTablePtr _table;
-  
 
   /** My pusher's callback */
   b_cbv _pushCallback;
-
   
   /** My puller's callback */
   b_cbv _pullCallback;
-
   
   /** My completion callback */
   b_cbv _compCallback;
-
-  
+ 
   /** My current lookup tuple */
   TuplePtr _lookupTuple;
-
   
   /** My encapsulated lookup tuple for all results */
   ValuePtr _lookupTupleValue;
-
   
   /** My current iterator */
   CommonTable::Iterator _iterator;
-
 
   /** My index key */
   CommonTable::Key _indexKey;
@@ -123,7 +103,6 @@ private:
   CommonTable::Key _lKey,_rKey;
 
   bool _openL, _openR;
-
 
   DECLARE_PRIVATE_ELEMENT_INITS
 };

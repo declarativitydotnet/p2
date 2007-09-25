@@ -15,22 +15,17 @@
  */
 
 
-#include <plumber.h>
+#include "plumber.h"
+
 #include <set>
 #include "table2.h"
 #include "reporting.h"
 #include "tableManager.h"
-#include "commitManager.h"
-#include "scheduler.h"
-#include "loop.h"
 #include "dot.h"
 
 
 CommonTable::ManagerPtr Plumber::_catalog(new TableManager());
 std::map<string, Plumber::DataflowPtr > Plumber::_dataflows;
-Scheduler Plumber::_scheduler(new CommitManager());
-
-
 
 /**************************************************************
  * Plumber::Dataflow is responsible for a dataflow that
@@ -899,10 +894,6 @@ void Plumber::DataflowEdit::remove_old_hookups(ElementSpec::HookupPtr hookup)
 Plumber::Plumber()
   : _logger(0)
 {
-}
-
-Scheduler* Plumber::scheduler() {
-  return &_scheduler;
 }
 
 /**

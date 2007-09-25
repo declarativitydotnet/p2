@@ -13,8 +13,7 @@
 #include <iostream>
 #include "rdelivery.h"
 #include "p2Time.h"
-#include "val_uint64.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "val_double.h"
 #include "val_str.h"
 #include "val_tuple.h"
@@ -36,7 +35,7 @@ RDelivery::RDelivery(TuplePtr args)
   : Element((*args)[2]->toString(), 2, 2),
     _out_cb(0),
     _in_on(true),
-    _max_retry(args->size() > 3 ? Val_UInt32::cast((*args)[3]) : 3) { }
+    _max_retry(args->size() > 3 ? Val_Int64::cast((*args)[3]) : 3) { }
 
 
 /**
@@ -90,7 +89,7 @@ int RDelivery::push(int port, TuplePtr tp, b_cbv cb)
 
 REMOVABLE_INLINE void RDelivery::handle_failure(ConnectionPtr cp) 
 {
-  cp->_tcb = NULL;
+  cp->_tcb = 0;
 
   for (std::deque<RDelivery::Connection::TuplePtr>::iterator iter = 
        cp->_outstanding.begin(); iter != cp->_outstanding.end(); ) {
@@ -115,8 +114,8 @@ REMOVABLE_INLINE void RDelivery::handle_failure(ConnectionPtr cp)
   }
 
   if (cp->_outstanding.size() > 0) {
-    cp->_tcb = delayCB((cp->_rtt) / 1000.0,
-                       boost::bind(&RDelivery::handle_failure, this, cp), this);
+    cp->_tcb = EventLoop::loop()->enqueue_timer((cp->_rtt) / 1000.0,
+						boost::bind(&RDelivery::handle_failure, this, cp));
   }
 }
 
@@ -148,7 +147,7 @@ void RDelivery::unmap(ValuePtr dest)
 TuplePtr RDelivery::tuple(TuplePtr tp)
 {
   ValuePtr dest = (*tp)[DEST];
-  SeqNum   seq  = Val_UInt64::cast((*tp)[SEQ]);
+  SeqNum   seq  = Val_Int64::cast((*tp)[SEQ]);
   double   rtt  = Val_Double::cast((*tp)[RTT]);
 
   RDelivery::ConnectionPtr cp = lookup(dest);  
@@ -160,7 +159,7 @@ TuplePtr RDelivery::tuple(TuplePtr tp)
   TuplePtr rtp = Tuple::mk();
   for (unsigned i = 0; i < tp->size(); i++) {
     if (i == CUMSEQ) {
-      rtp->append(Val_UInt64::mk(cp->_cum_seq));
+      rtp->append(Val_Int64::mk(cp->_cum_seq));
     }
     else {
       rtp->append((*tp)[i]);
@@ -170,9 +169,9 @@ TuplePtr RDelivery::tuple(TuplePtr tp)
 
   RDelivery::Connection::TuplePtr ctp(new RDelivery::Connection::Tuple(seq, rtp));
   cp->_outstanding.push_back(ctp);
-  if (cp->_tcb == NULL) {
-    cp->_tcb = delayCB((2 * cp->_rtt) / 1000.0,
-                       boost::bind(&RDelivery::handle_failure, this, cp), this);
+  if (cp->_tcb == 0) {
+    cp->_tcb = EventLoop::loop()->enqueue_timer((2 * cp->_rtt) / 1000.0,
+                       boost::bind(&RDelivery::handle_failure, this, cp));
   }
   return rtp;
 }
@@ -181,12 +180,12 @@ void RDelivery::ack(TuplePtr tp)
 {
   ValuePtr      dest = (*tp)[DEST + 2];
   ConnectionPtr cp   = lookup(dest);
-  SeqNum        cseq = Val_UInt64::cast((*tp)[CUMSEQ + 2]); 
+  SeqNum        cseq = Val_Int64::cast((*tp)[CUMSEQ + 2]); 
 
   if (cp && cp->_cum_seq < cseq) {
-    if (cp->_tcb != NULL) {
-      timeCBRemove(cp->_tcb);
-      cp->_tcb = NULL;
+    if (cp->_tcb != 0) {
+      EventLoop::loop()->cancel_timer(cp->_tcb);
+      cp->_tcb = 0;
     }
     cp->_cum_seq = cseq;
     while (cp->_outstanding.size() > 0 && 
@@ -194,8 +193,8 @@ void RDelivery::ack(TuplePtr tp)
       cp->_outstanding.pop_front();
     }
     if (cp->_outstanding.size() > 0) {
-      cp->_tcb = delayCB((2 * cp->_rtt) / 1000.0,
-                         boost::bind(&RDelivery::handle_failure, this, cp), this);
+      cp->_tcb = EventLoop::loop()->enqueue_timer((2 * cp->_rtt) / 1000.0,
+                         boost::bind(&RDelivery::handle_failure, this, cp));
     }
   }
 }

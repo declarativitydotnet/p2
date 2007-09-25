@@ -12,16 +12,17 @@
  * 
  */
 
-#include <element.h>
-#include <iostream>
-#include <math.h>
 #include "tman.h"
-#include "loop.h"
-#include "val_str.h"
-#include "val_uint32.h"
-#include "val_tuple.h"
-#include "val_time.h"
+
+#include "plumber.h"
 #include <boost/bind.hpp>
+#include <math.h>
+
+#include "val_str.h"
+#include "val_int64.h"
+#include "val_time.h"
+
+
 
 TrafficManager::TrafficManager(string n, string a, uint k, uint r, double s)
   : Element(n, 1, 2),
@@ -55,7 +56,7 @@ int TrafficManager::initialize()
   ELEM_INFO("initialize");
   // Schedule my timer
   if (_seconds != 0.0)
-    _timeCallback = delayCB(_seconds, _runTimerCB, this);
+    _timeCallback = EventLoop::loop()->enqueue_timer(_seconds,_runTimerCB);
   return 0;
 }
 
@@ -63,19 +64,19 @@ int TrafficManager::initialize()
 void TrafficManager::runTimer()
 {
   // remove the timer id
-  _timeCallback = NULL;
+  _timeCallback = 0;
 
-  boost::posix_time::ptime now;
-  getTime(now);
+  boost::posix_time::ptime now =
+    boost::posix_time::microsec_clock::universal_time();
 
   // Create a tuple
   TuplePtr tuple = Tuple::mk();
   tuple->append(Val_Str::mk("LOOKUP"));
-  tuple->append(Val_UInt32::mk(genLookupKey()));
+  tuple->append(Val_Int64::mk(genLookupKey()));
   tuple->append(Val_Str::mk(my_addr_));
   tuple->append(Val_Time::mk(now));
-  tuple->append(Val_UInt32::mk(0));	// Hop count
-  tuple->append(Val_UInt32::mk(0));	// Retries
+  tuple->append(Val_Int64::mk(0));	// Hop count
+  tuple->append(Val_Int64::mk(0));	// Retries
   tuple->freeze();
 
   // Attempt to push it
@@ -85,19 +86,19 @@ void TrafficManager::runTimer()
   } else {
     // Reschedule me into the future
     ELEM_INFO("runTimer: rescheduling");
-    _timeCallback = delayCB(_seconds, _runTimerCB, this);
+    _timeCallback = EventLoop::loop()->enqueue_timer(_seconds,_runTimerCB);
   }
 }
 
 void TrafficManager::wakeup()
 {
   // I'd better not be already scheduled
-  assert(_timeCallback == NULL);
+  assert(_timeCallback == 0);
 
   ELEM_INFO("wakeup");
 
   // Okey dokey.  Reschedule me into the future
-  _timeCallback = delayCB(_seconds, _runTimerCB, this);
+  _timeCallback = EventLoop::loop()->enqueue_timer(_seconds,_runTimerCB);
 }
 
 REMOVABLE_INLINE uint TrafficManager::genLookupKey() {
@@ -110,7 +111,7 @@ REMOVABLE_INLINE int TrafficManager::getKey(TuplePtr tp) {
   for (uint i = 0; i < tp->size(); i++) {
     try {
       if (Val_Str::cast((*tp)[i]) == "LOOKUP") {
-        return Val_UInt32::cast((*tp)[i+1]);
+        return Val_Int64::cast((*tp)[i+1]);
       }
     }
     catch (Value::TypeError e) { } 
@@ -123,8 +124,8 @@ REMOVABLE_INLINE bool TrafficManager::processResponse(TuplePtr tp) {
     try {
       if (Val_Str::cast((*tp)[i]) == "RESPONSE") {
 		boost::posix_time::ptime t = Val_Time::cast((*tp)[i+2]); 
-        uint    hc = Val_UInt32::cast((*tp)[i+3]);
-        uint    rc = Val_UInt32::cast((*tp)[i+4]);
+        uint    hc = Val_Int64::cast((*tp)[i+3]);
+        uint    rc = Val_Int64::cast((*tp)[i+4]);
         TELL_INFO << "RECEIVE RESPONSE: delay " << delay(&t) << ", hop count "
                   << hc << ", retry count " << rc << std::endl;
         return true;
@@ -146,9 +147,9 @@ REMOVABLE_INLINE TuplePtr TrafficManager::mkResponse(TuplePtr tp) {
         resp->append((*tp)[i+3]);		// Lookup time
         resp->append((*tp)[i+4]);		// Hop Count
         resp->append((*tp)[i+5]);		// Retry count
-        resp->append(Val_UInt32::mk(0));	// HACK: PAD FOR DATA PEL TRANSFORM
-        resp->append(Val_UInt32::mk(0));	// HACK: PAD FOR DATA PEL TRANSFORM
-        resp->append(Val_UInt32::mk(0));	// HACK: PAD FOR DATA PEL TRANSFORM
+        resp->append(Val_Int64::mk(0));	// HACK: PAD FOR DATA PEL TRANSFORM
+        resp->append(Val_Int64::mk(0));	// HACK: PAD FOR DATA PEL TRANSFORM
+        resp->append(Val_Int64::mk(0));	// HACK: PAD FOR DATA PEL TRANSFORM
         resp->freeze();
         return resp;
       }
@@ -161,8 +162,7 @@ REMOVABLE_INLINE TuplePtr TrafficManager::mkResponse(TuplePtr tp) {
 
 REMOVABLE_INLINE uint32_t TrafficManager::delay(boost::posix_time::ptime *ts)
 {
-  boost::posix_time::ptime now;
-  getTime(now);
-
+  boost::posix_time::ptime now =
+    boost::posix_time::microsec_clock::universal_time();
   return((uint32_t)(now - *ts).total_milliseconds());
 }

@@ -81,7 +81,7 @@ for op, ar, va, desc in [
   ("not",1, 	"NOT",          "Boolean negation"),
   ("and",2,	"AND",          "Boolean AND"),
   ("or",2,	"OR",           "Boolean inclusive-OR"),
-  ("rand",0,	"RAND",         "A random Int32"),
+  ("rand",0,	"RAND",         "A random Int64"),
   ("coin",1,	"COIN",         "A coin flip biased to 1 with probability given as the argument"),
   ("initlist",  0,"L_INIT",       "Initialize a list."),
   ("cons",      2,"L_CONS",       "Take first aregument and prepend it to the second list argument."),
@@ -169,7 +169,7 @@ for op, ar, va, desc in [
 
 
 
-for i in [ "i32", "u32", "i64", "u64", "dbl", "str", "time", "time_duration", "id" ]:
+for i in [ "i64", "dbl", "str", "time", "time_duration", "id" ]:
   emit_opcode("->"+i, 1, "CONV_" + i.upper(), "Convert to type "+i)
 
 warning="""

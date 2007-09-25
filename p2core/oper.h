@@ -310,7 +310,7 @@ namespace opr {
    * Basic Operator Function Template.
    * This template provides basic functionality for ALL operator functions
    * defined in Oper. Only the most basic concrete types will be able to
-   * make use of this template (e.g., Int32, UInt32, Int64, UInt64, Double).
+   * make use of this template (e.g., Int64, Double).
    */
   template <class T> class OperImpl : public OperCompare<T> { 
   public: 

@@ -28,7 +28,7 @@
 #include "element.h"
 #include "execRecord.h"
 #include "table2.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "val_str.h"
 
 class RuleTracer : public Element {

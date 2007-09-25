@@ -26,9 +26,6 @@
 #include "val_vector.h"
 #include "val_matrix.h"
 #include "val_list.h"
-#include "val_uint32.h"
-#include "val_int32.h"
-#include "val_uint64.h"
 #include "val_int64.h"
 #include "val_str.h"
 #include "val_time.h"
@@ -193,7 +190,7 @@ namespace compile {
       TuplePtr tp = Tuple::mk(FUNCTION);
   
       tp->append(Val_Str::mk(_name));
-      tp->append(Val_UInt32::mk(_args->size()));
+      tp->append(Val_Int64::mk(_args->size()));
       for (ExpressionList::iterator iter = _args->begin(); 
            iter != _args->end(); iter++) {
         tp->append((*iter)->tuple());
@@ -675,8 +672,8 @@ namespace compile {
       TuplePtr headTp = _head->materialize(catalog, (*ruleTp)[TUPLE_ID], ns);
       ruleTp->append((*headTp)[TUPLE_ID]);             // Add the "head" functor identifer.
       ruleTp->append(Val_Null::mk());                  // The P2DL desc. of this rule
-      ruleTp->append(Val_UInt32::mk(_delete));         // Delete rule?
-      ruleTp->append(Val_UInt32::mk(_body->size()+1)); // Term count?
+      ruleTp->append(Val_Int64::mk(_delete));         // Delete rule?
+      ruleTp->append(Val_Int64::mk(_body->size()+1)); // Term count?
       ruleTp->freeze();
       ruleTbl->insert(ruleTp);	               // Add rule to rule table.
     
@@ -851,7 +848,7 @@ namespace compile {
       if (keys) {
         for (ExpressionList::const_iterator i = keys->begin();
              i != keys->end(); i++)
-          _keys.push_back(Val_UInt32::cast((*i)->value()));
+          _keys.push_back(Val_Int64::cast((*i)->value()));
       }
     }
     

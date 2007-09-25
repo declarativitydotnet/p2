@@ -13,14 +13,14 @@
  */
 
 #include <timedPullPush.h>
-#include <element.h>
+
+
 #include <math.h>
 
-#include "loop.h"
 #include "val_str.h"
-#include "val_uint64.h"
 #include "val_double.h"
-#include "val_uint32.h"
+#include "val_int64.h"
+#include "eventLoop.h"
 #include <boost/bind.hpp>
 
 DEFINE_ELEMENT_INITS(TimedPullPush, "TimedPullPush")
@@ -37,7 +37,7 @@ DEFINE_ELEMENT_INITS(TimedPullPush, "TimedPullPush")
       _unblockPush(boost::bind(&TimedPullPush::pushWakeup, this)),
       _pendingPush(false),
       _runTimerCB(boost::bind(&TimedPullPush::runTimer, this)),
-      _timeCallback(NULL)
+      _timeCallback(0)
 {
   assert(_tuples >= 0);
 }
@@ -54,7 +54,7 @@ TimedPullPush::pull(int port, b_cbv cb)
  * Arguments:
  * 2. Val_Str:    Element Name.
  * 3. Val_Double: Seconds.
- * 4. Val_UInt32: Tuples.
+ * 4. Val_Int64: Tuples.
  */
 TimedPullPush::TimedPullPush(TuplePtr args)
   : Element(Val_Str::cast((*args)[2]), 1, 1),
@@ -66,10 +66,10 @@ TimedPullPush::TimedPullPush(TuplePtr args)
     _unblockPush(boost::bind(&TimedPullPush::pushWakeup, this)),
     _pendingPush(false),
     _runTimerCB(boost::bind(&TimedPullPush::runTimer, this)),
-    _timeCallback(NULL)
+    _timeCallback(0)
 {
   if (args->size() > 4)
-    _tuples = Val_UInt32::cast((*args)[4]);
+    _tuples = Val_Int64::cast((*args)[4]);
   //std::cout<<"\nTUPLES = "<<_tuples<<std::endl; std::cout.flush();
 }
 
@@ -168,7 +168,7 @@ TimedPullPush::reschedule()
               << _tuples
               << ")");
     // Okey dokey.  Reschedule me into the future
-    _timeCallback = delayCB(_seconds, _runTimerCB, this);
+    _timeCallback = EventLoop::loop()->enqueue_timer(_seconds, _runTimerCB);
   } else {
     ELEM_INFO("reschedule: DONE!");
   }

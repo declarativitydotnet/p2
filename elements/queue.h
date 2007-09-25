@@ -18,7 +18,6 @@
 #include "element.h"
 #include "elementRegistry.h"
 #include <queue>
-#include "iStateful.h"
 
 /** Simple queue that buffers up elements pushed in as input, and pulled from the other end. */
 class Queue : public Element { 
@@ -48,9 +47,6 @@ public:
 
 private:
   int initialize();
-
-  /** My state proxy */
-  IStatefulPtr _stateProxy;
 
   b_cbv _pullCB, _pushCB;
   unsigned int _size;

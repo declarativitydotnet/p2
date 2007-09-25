@@ -9,13 +9,13 @@
  * 
  */
 
+#include "rcct.h"
+
 #include <algorithm>
 #include <iostream>
 #include <math.h>
-#include "rcct.h"
-#include "loop.h"
-#include "val_uint64.h"
-#include "val_uint32.h"
+#include "eventLoop.h"
+#include "val_int64.h"
 #include "val_double.h"
 #include "val_str.h"
 #include "val_time.h"
@@ -57,9 +57,9 @@ RateCCT::RateCCT(string name)
     trate_(1),
     rtt_(100),
     rto_(4000),
-    nofeedback_(NULL)
+    nofeedback_(0),
+    tld_(boost::posix_time::microsec_clock::universal_time())
 {
-  getTime(tld_);
 }
 
 RateCCT::RateCCT(TuplePtr args) 
@@ -69,9 +69,9 @@ RateCCT::RateCCT(TuplePtr args)
     trate_(1),
     rtt_(100),
     rto_(4000),
-    nofeedback_(NULL)
+    nofeedback_(0),
+    tld_(boost::posix_time::microsec_clock::universal_time())
 {
-  getTime(tld_);
 }
 
 /**
@@ -86,9 +86,9 @@ int RateCCT::push(int port, TuplePtr tp, b_cbv cb)
   if ((*tp)[1]->typeCode() == Value::STR && Val_Str::cast((*tp)[1]) == "ACK") {
     // Acknowledge tuple with rate feedback.
     ValuePtr               dest = (*tp)[DEST + 2];
-    SeqNum                  seq = Val_UInt64::cast((*tp)[SEQ + 2]);
+    SeqNum                  seq = Val_Int64::cast((*tp)[SEQ + 2]);
     boost::posix_time::ptime ts = Val_Time::cast(  (*tp)[TS + 2]);
-    uint32_t                 rr = Val_UInt32::cast((*tp)[STACK_SIZE]);
+    uint32_t                 rr = Val_Int64::cast((*tp)[STACK_SIZE]);
     double                   p  = Val_Double::cast((*tp)[STACK_SIZE + 1]);
 
     unmap(dest, seq);
@@ -116,8 +116,9 @@ TuplePtr RateCCT::pull(int port, b_cbv cb)
 
 void RateCCT::map(ValuePtr dest, SeqNum seq)
 {
-  timeCBHandle *tcb = delayCB((0.0 + rto_) / 1000.0, 
-                              boost::bind(&RateCCT::tuple_timeout, this, dest, seq), this);
+  EventLoop::TimerID tcb =
+    EventLoop::loop()->enqueue_timer((0.0 + rto_) / 1000.0, 
+				     boost::bind(&RateCCT::tuple_timeout, this, dest, seq));
 
   ValueSeqTimeCBMap::iterator iter_map = index_.find(dest);
   boost::shared_ptr<SeqTimeCBMap> time_map;
@@ -137,7 +138,7 @@ void RateCCT::unmap(ValuePtr dest, SeqNum seq)
   if (iter_map != index_.end()) { \
     SeqTimeCBMap::iterator iter_time = iter_map->second->find(seq);
     if (iter_time != iter_map->second->end()) {
-      timeCBRemove(iter_time->second);
+      EventLoop::loop()->cancel_timer(iter_time->second);
       iter_map->second->erase(iter_time);
       if (iter_map->second->size() == 0) {
         index_.erase(iter_map); 
@@ -178,7 +179,7 @@ void RateCCT::tuple_timeout(ValuePtr d, SeqNum s)
 
 void RateCCT::feedback_timeout() 
 {
-  nofeedback_ = NULL;
+  nofeedback_ = 0;
   if (trate_ > 2*rrate_) {
     rrate_ = MAX(trate_/2, 1U);
   }
@@ -190,26 +191,23 @@ void RateCCT::feedback_timeout()
 
 REMOVABLE_INLINE uint32_t RateCCT::delay(boost::posix_time::ptime *ts)
 {
-  boost::posix_time::ptime  now;
-  getTime(now);
-  return((now - *ts).total_milliseconds());
+  return ((boost::posix_time::microsec_clock::universal_time() - *ts).total_milliseconds());
 }
 
 REMOVABLE_INLINE TuplePtr RateCCT::package(TuplePtr tp)
 {
   ValuePtr dest = (*tp)[DEST];
-  SeqNum   seq  = Val_UInt64::cast((*tp)[SEQ]);
-  boost::posix_time::ptime now;
-  getTime(now);
+  SeqNum   seq  = Val_Int64::cast((*tp)[SEQ]);
+
   map(dest, seq);	// Set a timer for this tuple
 
   TuplePtr p = Tuple::mk();
   for (unsigned i = 0; i < tp->size(); i++) {
     if (i == RTT) {
-      p->append(Val_UInt32::mk(rtt_));
+      p->append(Val_Int64::mk(rtt_));
     }
     else if (i == TS) {
-      p->append(Val_Time::mk(now));
+      p->append(Val_Time::mk(boost::posix_time::microsec_clock::universal_time()));
     }
     else {
       p->append((*tp)[i]);
@@ -225,8 +223,8 @@ REMOVABLE_INLINE TuplePtr RateCCT::package(TuplePtr tp)
  */
 REMOVABLE_INLINE void RateCCT::feedback(uint32_t rt, uint32_t X_recv, double p)
 {
-  if (nofeedback_ != NULL) {
-    timeCBRemove(nofeedback_);
+  if (nofeedback_ != 0) {
+    EventLoop::loop()->cancel_timer(nofeedback_);
   }
 
   if (!rtt_) {
@@ -246,11 +244,12 @@ REMOVABLE_INLINE void RateCCT::feedback(uint32_t rt, uint32_t X_recv, double p)
   }
   else if (delay(&tld_) > rtt_) {
     trate_ = MAX(MIN(2*trate_, 2*X_recv), 2U);
-    getTime(tld_);
-  }
+    tld_ = boost::posix_time::microsec_clock::universal_time();
 
   rrate_ = X_recv;		// Save the receiver rate
   uint32_t tms = MAX(rto_, 8000/trate_);
-  nofeedback_ = delayCB((0.0 + tms) / 1000.0,
-                        boost::bind(&RateCCT::feedback_timeout, this), this);
+  nofeedback_ = EventLoop::loop()->enqueue_timer((0.0 + tms) / 1000.0,
+						 boost::bind(&RateCCT::feedback_timeout, this));
+  }
 }
+

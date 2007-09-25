@@ -15,10 +15,7 @@
 
 #include "val_double.h"
 
-#include "val_int32.h"
-#include "val_uint32.h"
 #include "val_int64.h"
-#include "val_uint64.h"
 #include "val_str.h"
 #include "val_null.h"
 
@@ -90,17 +87,8 @@ Val_Double::cast(ValuePtr v)
   case Value::DOUBLE:
     returnValue = (static_cast<Val_Double *>(v.get()))->d;
     break;
-  case Value::INT32:
-    returnValue = (double)(Val_Int32::cast(v));
-    break;
-  case Value::UINT32:
-    returnValue = (double)(Val_UInt32::cast(v));
-    break;
   case Value::INT64:
     returnValue = (double)(Val_Int64::cast(v));
-    break;
-  case Value::UINT64:
-    returnValue = (double)(Val_UInt64::cast(v));
     break;
   case Value::NULLV:
     returnValue = 0;

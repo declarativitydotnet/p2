@@ -18,7 +18,7 @@
 #include "val_tuple.h"
 #include "xdrbuf.h"
 #include "val_str.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 #include "val_list.h"
 
 DEFINE_ELEMENT_INITS(UnmarshalField, "UnmarshalField")
@@ -40,7 +40,7 @@ UnmarshalField::UnmarshalField(string name,
  * Generic constructor.
  * Arguments:
  * 2. Val_Str:    Element Name.
- * 3. Val_UInt32: Field number.
+ * 3. Val_Int64: Field number.
  * OR
  * 3. Val_List:   Field numbers.
  */
@@ -51,10 +51,10 @@ UnmarshalField::UnmarshalField(TuplePtr args)
     ListPtr fieldNos = Val_List::cast((*args)[3]);
     for (ValPtrList::const_iterator i = fieldNos->begin();
          i != fieldNos->end(); i++)
-      _fieldNos.push_back(Val_UInt32::cast(*i));
+      _fieldNos.push_back(Val_Int64::cast(*i));
   }
   else {
-    _fieldNos.push_back(Val_UInt32::cast((*args)[3]));
+    _fieldNos.push_back(Val_Int64::cast((*args)[3]));
   }
 }
 

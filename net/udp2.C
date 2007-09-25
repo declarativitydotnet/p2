@@ -20,8 +20,7 @@
 
 #include "val_str.h"
 #include "val_opaque.h"
-#include "val_int32.h"
-#include "val_uint32.h"
+#include "val_int64.h"
 
 DEFINE_ELEMENT_INITS(Udp2, "Udp2")
 
@@ -168,7 +167,7 @@ Udp2::Udp2(string name,
     rx(new Udp2::Rx(name, *this)),
     tx(new Udp2::Tx(name, *this))
 {
-  sd = networkSocket(SOCK_DGRAM, port, addr);
+  sd = P2Net::inetSocket(SOCK_DGRAM, port, addr);
   if (sd < 0) {
     // Couldn't allocate network socket
     throw NetworkException();
@@ -181,13 +180,13 @@ Udp2::Udp2(TuplePtr args)
     tx(new Udp2::Tx(name(), *this))
 {
   if (args->size() > 4) {
-    sd = networkSocket(SOCK_DGRAM, 
-                       Val_UInt32::cast((*args)[3]), 
-                       Val_UInt32::cast((*args)[4]));
+    sd = P2Net::inetSocket(SOCK_DGRAM, 
+			   Val_Int64::cast((*args)[3]), 
+			   Val_Int64::cast((*args)[4]));
   }
   else {
-    sd = networkSocket(SOCK_DGRAM, 
-                       Val_UInt32::cast((*args)[3]), INADDR_ANY); 
+    sd = P2Net::inetSocket(SOCK_DGRAM, 
+			   Val_Int64::cast((*args)[3]), INADDR_ANY); 
   }
 
   if (sd < 0) {
