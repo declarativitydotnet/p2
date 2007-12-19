@@ -1,6 +1,6 @@
 Project(P2)
 
-SUBDIRS(p2core aggregates functions p2cpp lang elements stages net overlog planner debugger unitTests tests python)
+SUBDIRS(p2core aggregates functions p2cpp lang elements stages net overlog planner unitTests tests python oni doc)
 
 # Main decisions
 SET(BUILD_SHARED_LIBS ON)
@@ -17,6 +17,8 @@ INCLUDE(FindPythonLibs)
 ## FindFLEX from http://www.cmake.org/Bug/bug.php?op=show&bugid=4018&pos=4
 FIND_PACKAGE(FLEX)
 FIND_PACKAGE(BISON)
+
+FIND_PACKAGE(LATEX)
 
 # Look for include files
 INCLUDE (CheckIncludeFiles)
@@ -49,6 +51,10 @@ ADD_DEFINITIONS(-DBOOST_DATE_TIME_POSIX_TIME_STD_CONFIG)
 
 # ADD_DEFINITIONS(-DBOOST_LIB_DIAGNOSTIC)
 ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK)
+ADD_DEFINITIONS(-DP2_SOURCE_DIR="\\\"${P2_SOURCE_DIR}\\\"")
+
+# Remove tracing by default
+ADD_DEFINITIONS(-DTRACE_OFF)
 
 IF(WIN32)
   SET(PLATFORM_INCLUDE_DIR ${P2_BINARY_DIR}/getopt)
@@ -64,24 +70,29 @@ INCLUDE_DIRECTORIES(
 		    ${CMAKE_CURRENT_BINARY_DIR} 
 		    ${CMAKE_CURRENT_SOURCE_DIR}/overlog	
                     ${CMAKE_CURRENT_SOURCE_DIR}/p2core 
+		    ${CMAKE_CURRENT_BINARY_DIR}/p2core/pel 
+                    ${CMAKE_CURRENT_SOURCE_DIR}/p2core/pel
+                    ${CMAKE_CURRENT_SOURCE_DIR}/p2core/secureUtil 
 		    ${CMAKE_CURRENT_SOURCE_DIR}/aggregates
                     ${CMAKE_CURRENT_SOURCE_DIR}/elements
                     ${CMAKE_CURRENT_SOURCE_DIR}/stages
                     ${CMAKE_CURRENT_SOURCE_DIR}/net
+                    ${CMAKE_CURRENT_SOURCE_DIR}/oni
                     ${CMAKE_CURRENT_SOURCE_DIR}/overlog
                     ${CMAKE_CURRENT_SOURCE_DIR}/planner
-                    ${CMAKE_CURRENT_SOURCE_DIR}/debugger
                     ${CMAKE_CURRENT_SOURCE_DIR}/p2cpp
                     ${CMAKE_CURRENT_SOURCE_DIR}/lang
                     ${CMAKE_CURRENT_SOURCE_DIR}/lang/debug
                     ${CMAKE_CURRENT_SOURCE_DIR}/lang/eca
-                    ${CMAKE_CURRENT_SOURCE_DIR}/lang/local
                     ${CMAKE_CURRENT_SOURCE_DIR}/lang/p2dl
                     ${CMAKE_CURRENT_SOURCE_DIR}/lang/parse
                     ${CMAKE_CURRENT_SOURCE_DIR}/lang/planner
-                    ${CMAKE_CURRENT_SOURCE_DIR}/lang/rewrite
+                    ${CMAKE_CURRENT_SOURCE_DIR}/lang/rewrite0
+                    ${CMAKE_CURRENT_SOURCE_DIR}/lang/rewrite1
+                    ${CMAKE_CURRENT_SOURCE_DIR}/lang/rewrite2
+                    ${CMAKE_CURRENT_SOURCE_DIR}/lang/compound
+                    ${CMAKE_CURRENT_SOURCE_DIR}/lang/secure
                     ${CMAKE_CURRENT_SOURCE_DIR}/functions
-                    ${CMAKE_CURRENT_SOURCE_DIR}/debugger
 		    ${Boost_INCLUDE_DIRS} 
 		    ${PYTHON_INCLUDE_PATH} 
 		    /usr/include)
@@ -92,19 +103,23 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS}
 		${P2_BINARY_DIR}/net 
 		${P2_BINARY_DIR}/stages 
 		${P2_BINARY_DIR}/elements 
-		${P2_BINARY_DIR}/debugger 
 		${P2_BINARY_DIR}/p2core  
+		${P2_BINARY_DIR}/p2core/pel
+		${P2_BINARY_DIR}/p2core/secureUtil
 		${P2_BINARY_DIR}/aggregates
 		${P2_BINARY_DIR}/planner
 		${P2_BINARY_DIR}/p2cpp
 		${P2_BINARY_DIR}/lang
 		${P2_BINARY_DIR}/lang/debug
 		${P2_BINARY_DIR}/lang/eca
-		${P2_BINARY_DIR}/lang/local
 		${P2_BINARY_DIR}/lang/p2dl
 		${P2_BINARY_DIR}/lang/parse
 		${P2_BINARY_DIR}/lang/planner
-		${P2_BINARY_DIR}/lang/rewrite
+		${P2_BINARY_DIR}/lang/rewrite0
+		${P2_BINARY_DIR}/lang/rewrite1
+		${P2_BINARY_DIR}/lang/rewrite2
+		${P2_BINARY_DIR}/lang/compound
+		${P2_BINARY_DIR}/lang/secure
 		${P2_BINARY_DIR}/functions
 				)
 		
@@ -113,7 +128,6 @@ SET(COMMON_LIBRARIES p2core
 					 p2net
 					 p2stages
 					 p2elements
-					 p2debugger
 					 p2aggregates
 					 p2cpp
 					 p2functions
@@ -121,13 +135,23 @@ SET(COMMON_LIBRARIES p2core
 					 p2lang
 					 p2parse
 					 p2eca
-					 p2local
-					 p2rewrite
+					 p2rewrite0
+					 p2rewrite1
+					 p2rewrite2
+					 p2compound
+					 p2secure
 					 p2debug
 					 p2planner 
 					 p2planner2 
 					 p2dl
+					 p2pel
+					 p2oni
 	   				 )
+
+#Default build type and some variables (PM)
+SET(CMAKE_CXX_FLAGS_DEBUG "-Wall -gdwarf-2 -DTRACE_OFF")
+SET(CMAKE_BUILD_TYPE Debug)
+
 
 # uncomment the following line to get CMake variables to print to screen
 # INCLUDE(CMakePrintSystemInformation)

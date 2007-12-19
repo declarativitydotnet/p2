@@ -33,6 +33,7 @@
 %left OL_BITXOR
 %left OL_BITAND
 %left OL_BITNOT
+%left OL_APPEND
 %left OL_EQ OL_NEQ
 %nonassoc OL_GT OL_GTE OL_LT OL_LTE
 %left OL_LSHIFT OL_RSHIFT
@@ -348,7 +349,6 @@ math_expr:	  math_expr OL_LSHIFT math_expr
 		| OL_LPAR math_expr OL_RPAR 
 			{ $$ = $2; }
 		;
-
 
 range_expr:	OL_LPAR math_expr OL_COMMA math_expr OL_RPAR 
 			{ $$ = new Parse_Range(Parse_Range::RANGEOO, $2, $4); } 

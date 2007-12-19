@@ -19,7 +19,7 @@ ADD_LIBRARY(p2elements
             aggwrap2Callback.C
             commitBuf.C
             compileStage.C
-            compileTerminal.C 
+            programLoader.C 
             dDuplicateConservative.C 
             dRoundRobin.C 
             ddemux.C 
@@ -44,9 +44,11 @@ ADD_LIBRARY(p2elements
             mux.C 
             noNull.C 
             noNullField.C 
+            onlyNullField.C
             noNullSignal.C
             pelTransform.C 
             print.C 
+            tupleCounter.C 
             printTime.C 
             printWatch.C 
             pullPush.C

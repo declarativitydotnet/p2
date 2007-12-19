@@ -34,6 +34,10 @@
 #include <limits.h>
 #include <stdlib.h>
 
+#include "reporting.h"
+#define LOG_ERROR(_x) { TELL_ERROR << "OLG_Lexer: " << _x << "\n"; }
+#define LOG_WARN(_x) { TELL_WARN << "OLG_Lexer: " << _x << "\n"; }
+
 #ifdef YY_DECL
 #undef YY_DECL
 #endif
@@ -108,9 +112,19 @@ WHITESPACE	[ \t\r\n]+
 }
 
 <INITIAL>materialize { return OLG_MATERIALIZE; }
+<INITIAL>index { return OLG_INDEX; }
+<INITIAL>strong { return OLG_STRONG; }
+<INITIAL>weak { return OLG_WEAK; }
+<INITIAL>strongSays { return OLG_STRONGSAYS; }
+<INITIAL>weakSays { return OLG_WEAKSAYS; }
+<INITIAL>ref { return OLG_REF; }
+<INITIAL>materializeSays { return OLG_SAYSMATERIALIZE; }
 <INITIAL>namespace { return OLG_NAMESPACE; }
 <INITIAL>keys { return OLG_KEYS; }
+<INITIAL>notin { return OLG_NOTIN; }
 <INITIAL>in { return OLG_IN; }
+<INITIAL>says { return OLG_SAYS;}
+<INITIAL>new { return OLG_NEW;}
 <INITIAL>"," { return OLG_COMMA; }
 <INITIAL>"(" { return OLG_LPAR; }
 <INITIAL>")" { return OLG_RPAR; }
@@ -146,10 +160,13 @@ WHITESPACE	[ \t\r\n]+
 <INITIAL>"!" { return OLG_NOT; }
 <INITIAL>"&&" { return OLG_AND; }
 <INITIAL>"||" { return OLG_OR; } 
+<INITIAL>"|||" { return OLG_APPEND; } 
 
 <INITIAL>":=" { return OLG_ASSIGN; }
 <INITIAL>"." { return OLG_DOT; }
 <INITIAL>":-" { return OLG_IF; }
+<INITIAL>"?" { return OLG_QUESTION; }
+<INITIAL>":" { return OLG_COLON; }
 <INITIAL>"watch" { return OLG_WATCH; }
 <INITIAL>"watchmod" { return OLG_WATCHFINE; }
 <INITIAL>"stage" { return OLG_STAGE; }
@@ -163,13 +180,13 @@ WHITESPACE	[ \t\r\n]+
 
 <INITIAL>"true" {
   // Unsigned integer literal (including octal and/or hex)
-  lvalp->v = new compile::parse::Value(Val_Int32::mk(1));
+  lvalp->v = new compile::parse::Value(Val_Int64::mk(1));
   return OLG_VALUE;
 }
 
 <INITIAL>"false" {
   // Unsigned integer literal (including octal and/or hex)
-  lvalp->v = new compile::parse::Value(Val_Int32::mk(0));
+  lvalp->v = new compile::parse::Value(Val_Int64::mk(0));
   return OLG_VALUE;
 }
 
@@ -193,6 +210,10 @@ WHITESPACE	[ \t\r\n]+
   lvalp->v = new compile::parse::Variable(Val_Str::mk(yytext+1), true); 
   return OLG_VAR; }
 
+<INITIAL>\&[A-Z]{ALNUM}* { 
+  lvalp->v = new compile::parse::Variable(Val_Str::mk(yytext+1), false, true); 
+  return OLG_VAR; }
+
 <INITIAL>_ { 
   ostringstream oss;
   oss << "$_" << unNamedVariableCounter++; 
@@ -201,24 +222,28 @@ WHITESPACE	[ \t\r\n]+
 
 <INITIAL>infinity {
   // Unsigned integer literal (including octal and/or hex)
-  lvalp->v = new compile::parse::Value(Val_Int32::mk(-1));
+  lvalp->v = new compile::parse::Value(Val_Int64::mk(-1));
   return OLG_VALUE;
 }
 
-<INITIAL>("::"|[a-z]){ALNUM}* { 
+<INITIAL>"::"?[a-z]("::"|{ALNUM})* { 
   lvalp->v = new compile::parse::Value(Val_Str::mk(yytext)); 
   return OLG_NAME; 
 }
 
 <INITIAL>({DIGIT}+|0[xX]{HEXDIGIT}+)U {
-  // Unsigned integer literal (including octal and/or hex)
-  lvalp->v = new compile::parse::Value(Val_UInt32::mk(strtoull(yytext,NULL,0)));
+  // Some unsigned integer literal (including octal and/or hex)
+  LOG_WARN("Unsigned integers of the form '"
+           << yytext
+           << "' have been deprecated. For backward compatibility "
+           << "they are interpreted as signed 64-bit integers.");
+  lvalp->v = new compile::parse::Value(Val_Int64::mk(strtoll(yytext,NULL,0)));
   return OLG_VALUE;
 }
 
 <INITIAL>(-?{DIGIT}+|0[xX]{HEXDIGIT}+) {
   // Some integer literal (including octal and/or hex)
-  lvalp->v = new compile::parse::Value(Val_Int32::mk(strtoll(yytext,NULL,0)));
+  lvalp->v = new compile::parse::Value(Val_Int64::mk(strtoll(yytext,NULL,0)));
   return OLG_VALUE;
 }
 
@@ -256,6 +281,6 @@ OLG_Lexer::OLG_Lexer(const char *prog)
   yy_switch_to_buffer( bufstate );
 };
 
-OLG_Lexer::~OLG_Lexer() { 
-  yy_delete_buffer(bufstate); 
+OLG_Lexer::~OLG_Lexer() {
+  yy_delete_buffer(bufstate);
 };
